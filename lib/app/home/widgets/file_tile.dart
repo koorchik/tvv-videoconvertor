@@ -196,7 +196,14 @@ class FileTile extends ConsumerWidget {
           PlanKind.skip => (l10n.statusReadyAsIs, success.text),
           PlanKind.remux ||
           PlanKind.audioOnly => (l10n.statusQuickFix, scheme.primary),
-          PlanKind.unsupported => (l10n.statusUnsupported, scheme.error),
+          PlanKind.unsupported => (
+            switch (item.plan!.notes.firstOrNull) {
+              PlanNote.noAudioStream => l10n.statusNoSound,
+              PlanNote.containerCannotHold => l10n.statusCannotHold,
+              _ => l10n.statusUnsupported,
+            },
+            scheme.error,
+          ),
           _ => (l10n.statusFullConversion, muted),
         };
     }
@@ -223,6 +230,9 @@ class FileTile extends ConsumerWidget {
           PlanNote.variableFrameRateFixed => [l10n.noteVariableFrameRate],
           PlanNote.hevc422NeedsRecentNvidia => [l10n.noteHevc422],
           PlanNote.experimentalAv1Intermediate => [l10n.noteExperimentalAv1],
+          PlanNote.hdrToneMapped => [l10n.noteHdrToneMapped],
+          PlanNote.hdrNotConverted => [l10n.noteHdrNotConverted],
+          PlanNote.audioConvertedToFit => [l10n.noteAudioConvertedToFit],
           _ => const <String>[],
         },
     ];

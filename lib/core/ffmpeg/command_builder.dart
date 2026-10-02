@@ -50,7 +50,12 @@ List<String> buildFfmpegArgs({
     // Only the main picture and the audio tracks are carried over. Data
     // tracks are dropped; FFmpeg rebuilds the timecode track from metadata.
     if (video is VideoNone) '-vn' else ...['-map', '0:v:0'],
-    if (audio is AudioNone) '-an' else ...['-map', '0:a?'],
+    if (audio is AudioNone)
+      '-an'
+    else ...[
+      '-map',
+      plan.firstAudioOnly ? '0:a:0' : '0:a?',
+    ],
     '-map_metadata', plan.keepMetadata ? '0' : '-1',
 
     ...switch (video) {

@@ -17,6 +17,15 @@ Drop videos in, pick what you want, press Start.
 - **Edit in DaVinci Resolve (Linux).** Makes camera and screen recordings open
   with both picture and sound in Resolve on Linux, for Resolve Studio and for
   the free edition.
+- **Send to a phone.** A small file that plays on any phone and in messengers
+  such as Telegram. HDR footage is adjusted to look right on ordinary screens.
+- **Get the sound.** Saves the sound track as its own file, untouched by
+  default, or as MP3, M4A, WAV or FLAC.
+- **Remove personal details.** Strips place, date, camera and author
+  information before sharing. Quick (picture and sound copied untouched) or
+  thorough (rebuilt from scratch).
+- **Change file type.** Moves a video into MP4, MKV or MOV in seconds, without
+  re-encoding the picture.
 
 It does the least work that reaches the goal. A file that is already fine is
 left alone; a file that only needs its sound converted is done in seconds with
@@ -44,8 +53,8 @@ Early but working on Linux. Not done yet:
   machines. Keeping the computer awake and pausing are not implemented on
   Windows.
 - Only one video is converted at a time.
-- More goals are planned: phone/Telegram, extract audio, remove personal
-  metadata, change format without re-encoding.
+- The quality levels are sensible starting values, not yet measured on real
+  footage.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md).
 

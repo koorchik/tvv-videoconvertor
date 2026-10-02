@@ -174,13 +174,13 @@ class AppLocalizationsUk extends AppLocalizations {
   String get statusReadyAsIs => 'Уже готове';
 
   @override
-  String get statusQuickFix => 'Швидке виправлення без втрати якості';
+  String get statusQuickFix => 'Швидко, зображення не змінюється';
 
   @override
   String get statusFullConversion => 'Буде конвертовано';
 
   @override
-  String get statusUnsupported => 'Немає зображення для конвертації';
+  String get statusUnsupported => 'У цьому файлі немає зображення';
 
   @override
   String get statusUnreadable => 'Це не відеофайл';
@@ -471,4 +471,77 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get cmdOutput => 'Куди записується результат';
+
+  @override
+  String get scenarioShareTitle => 'Надіслати на телефон';
+
+  @override
+  String get scenarioShareHint =>
+      'Маленький файл, що відтворюється на будь-якому телефоні, у Telegram та інших месенджерах. У Telegram надсилайте як файл, щоб зберегти цю якість.';
+
+  @override
+  String get scenarioAudioTitle => 'Дістати звук';
+
+  @override
+  String get scenarioAudioHint => 'Зберігає звук із відео окремим файлом.';
+
+  @override
+  String get scenarioPrivacyTitle => 'Прибрати особисті дані';
+
+  @override
+  String get scenarioPrivacyHint =>
+      'Прибирає приховані позначки про місце, дату, камеру й автора перед тим, як ділитися відео. Те, що видно і чутно, не змінюється.';
+
+  @override
+  String get scenarioRemuxTitle => 'Змінити тип файлу';
+
+  @override
+  String get scenarioRemuxHint =>
+      'За секунди перекладає відео в інший тип файлу, не змінюючи якості зображення.';
+
+  @override
+  String get optionSizeTitle => 'Розмір';
+
+  @override
+  String get shareSmall => 'Менший';
+
+  @override
+  String get shareStandard => 'Стандартний';
+
+  @override
+  String get optionFormatTitle => 'Тип файлу';
+
+  @override
+  String get formatOriginal => 'Як є';
+
+  @override
+  String get optionModeTitle => 'Наскільки ретельно';
+
+  @override
+  String get modeQuick => 'Швидко';
+
+  @override
+  String get modeThorough => 'Ретельно';
+
+  @override
+  String get modeThoroughHint =>
+      'Ретельний режим заново створює зображення і звук. Це значно довше, але найнадійніше.';
+
+  @override
+  String get noteHdrToneMapped =>
+      'Дуже яскраві кольори буде пристосовано, щоб відео гарно виглядало на будь-якому екрані.';
+
+  @override
+  String get noteHdrNotConverted =>
+      'У цьому відео надяскраві кольори, які на телефоні можуть виглядати блідо.';
+
+  @override
+  String get noteAudioConvertedToFit =>
+      'Звук буде перетворено, щоб він підходив до цього типу файлу.';
+
+  @override
+  String get statusNoSound => 'У цьому файлі немає звуку';
+
+  @override
+  String get statusCannotHold => 'Цей тип файлу не може містити таке відео';
 }

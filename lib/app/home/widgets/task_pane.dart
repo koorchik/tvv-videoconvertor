@@ -55,20 +55,18 @@ class TaskPane extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    for (final s in scenarios)
-                      _ScenarioCard(
-                        scenario: s,
-                        selected: s == scenario,
-                        onTap: () => controller.selectPreset(
-                          s.presets
-                              .firstWhere(
-                                (preset) =>
-                                    presetAvailable(preset, capabilities),
-                              )
-                              .id,
-                        ),
+                    _ScenarioGrid(
+                      selected: scenario,
+                      onSelect: (s) => controller.selectPreset(
+                        s.presets
+                            .firstWhere(
+                              (preset) => presetAvailable(preset, capabilities),
+                            )
+                            .id,
                       ),
-                    const SizedBox(height: 8),
+                    ),
+                    _Hint(scenarioHint(l10n, scenario.id)),
+                    const SizedBox(height: 14),
                     if (presets.length > 1) ...[
                       SegmentedButton<String>(
                         showSelectedIcon: false,
@@ -159,8 +157,43 @@ class TaskPane extends ConsumerWidget {
   }
 }
 
-class _ScenarioCard extends StatelessWidget {
-  const _ScenarioCard({
+/// The goals as a two-column grid of compact tiles. Only the chosen goal is
+/// explained (below the grid), which keeps six goals on one screen.
+class _ScenarioGrid extends StatelessWidget {
+  const _ScenarioGrid({required this.selected, required this.onSelect});
+
+  final Scenario selected;
+  final ValueChanged<Scenario> onSelect;
+
+  static const _gap = 8.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tileWidth = (constraints.maxWidth - _gap) / 2;
+        return Wrap(
+          spacing: _gap,
+          runSpacing: _gap,
+          children: [
+            for (final scenario in scenarios)
+              SizedBox(
+                width: tileWidth,
+                child: _ScenarioTile(
+                  scenario: scenario,
+                  selected: scenario == selected,
+                  onTap: () => onSelect(scenario),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ScenarioTile extends StatelessWidget {
+  const _ScenarioTile({
     required this.scenario,
     required this.selected,
     required this.onTap,
@@ -175,53 +208,41 @@ class _ScenarioCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: selected ? scheme.primaryContainer : scheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(
-            color: selected ? scheme.primary : scheme.outlineVariant,
-            width: selected ? 2 : 1,
-          ),
+    return Material(
+      color: selected ? scheme.primaryContainer : scheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: selected ? scheme.primary : scheme.outlineVariant,
+          width: selected ? 2 : 1,
         ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 60),
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
                   scenarioIcon(scenario.id),
-                  size: 28,
+                  size: 24,
                   color: selected ? scheme.primary : scheme.onSurfaceVariant,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        scenarioTitle(l10n, scenario.id),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        scenarioHint(l10n, scenario.id),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    scenarioTitle(l10n, scenario.id),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: selected ? scheme.onPrimaryContainer : null,
+                    ),
                   ),
                 ),
-                if (selected)
-                  Icon(Icons.check_circle_rounded, color: scheme.primary),
               ],
             ),
           ),

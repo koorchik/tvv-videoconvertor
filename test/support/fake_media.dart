@@ -7,6 +7,7 @@ const mkvContainer = 'matroska,webm';
 /// A made-up input file for preset tests. Defaults describe a one-minute UHD
 /// H.264 clip with stereo AAC in an MP4, the commonest thing cameras produce.
 MediaInfo clip({
+  String path = '/videos/clip.mp4',
   String container = movContainer,
   String? video = 'h264',
   String pixFmt = 'yuv420p',
@@ -20,7 +21,7 @@ MediaInfo clip({
   Duration duration = const Duration(minutes: 1),
 }) {
   return MediaInfo(
-    path: '/videos/clip.mp4',
+    path: path,
     formatName: container,
     duration: duration,
     sizeBytes: 750000000,
@@ -41,7 +42,7 @@ MediaInfo clip({
   );
 }
 
-AudioStream track(String codec, {int channels = 2, int? bitRate = 256000}) {
+AudioStream track(String codec, {int channels = 2, int? bitRate = 160000}) {
   return AudioStream(
     index: 1,
     codec: codec,
@@ -63,4 +64,11 @@ Capabilities withGpu(Set<String> hardwareEncoders) => Capabilities(
   encoders: {...softwareOnly.encoders, ...hardwareEncoders},
   hardwareEncoders: hardwareEncoders,
   svtAv1Params: 'tune=0',
+);
+
+/// A build that can also tone-map HDR.
+const withToneMapping = Capabilities(
+  ffmpegVersion: 'test',
+  encoders: {'libx264', 'libx265', 'aac'},
+  filters: {'zscale', 'tonemap', 'scale'},
 );

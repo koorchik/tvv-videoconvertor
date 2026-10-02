@@ -175,13 +175,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusReadyAsIs => 'Ready as is';
 
   @override
-  String get statusQuickFix => 'Quick fix, no quality loss';
+  String get statusQuickFix => 'Quick, the picture stays untouched';
 
   @override
   String get statusFullConversion => 'Will be converted';
 
   @override
-  String get statusUnsupported => 'No picture to convert';
+  String get statusUnsupported => 'No picture in this file';
 
   @override
   String get statusUnreadable => 'Not a video file';
@@ -468,4 +468,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cmdOutput => 'Where the result is written';
+
+  @override
+  String get scenarioShareTitle => 'Send to a phone';
+
+  @override
+  String get scenarioShareHint =>
+      'Small and plays on any phone, in Telegram and other messengers. In Telegram, send it as a file to keep this quality.';
+
+  @override
+  String get scenarioAudioTitle => 'Get the sound';
+
+  @override
+  String get scenarioAudioHint =>
+      'Saves the sound of a video as a separate file.';
+
+  @override
+  String get scenarioPrivacyTitle => 'Remove personal details';
+
+  @override
+  String get scenarioPrivacyHint =>
+      'Removes the hidden notes about place, date, camera and author before you share a video. What is seen and heard stays the same.';
+
+  @override
+  String get scenarioRemuxTitle => 'Change file type';
+
+  @override
+  String get scenarioRemuxHint =>
+      'Puts the video into another kind of file in seconds, without touching the picture quality.';
+
+  @override
+  String get optionSizeTitle => 'Size';
+
+  @override
+  String get shareSmall => 'Smaller';
+
+  @override
+  String get shareStandard => 'Standard';
+
+  @override
+  String get optionFormatTitle => 'File type';
+
+  @override
+  String get formatOriginal => 'As it is';
+
+  @override
+  String get optionModeTitle => 'How thoroughly';
+
+  @override
+  String get modeQuick => 'Quick';
+
+  @override
+  String get modeThorough => 'Thorough';
+
+  @override
+  String get modeThoroughHint =>
+      'Thorough rebuilds the picture and sound from scratch. It takes much longer and is the safest.';
+
+  @override
+  String get noteHdrToneMapped =>
+      'Very bright colours will be adjusted to look right on any screen.';
+
+  @override
+  String get noteHdrNotConverted =>
+      'This video uses extra-bright colours that may look washed out on a phone.';
+
+  @override
+  String get noteAudioConvertedToFit =>
+      'The sound will be converted to fit this file type.';
+
+  @override
+  String get statusNoSound => 'No sound in this file';
+
+  @override
+  String get statusCannotHold => 'This file type cannot hold this video';
 }

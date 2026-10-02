@@ -22,6 +22,8 @@ class TestMedia {
 
   Future<void> dispose() => dir.delete(recursive: true);
 
+  String file(String name) => p.join(dir.path, name);
+
   /// Makes a clip of a moving test pattern with a tone.
   ///
   /// [video] and [audio] are FFmpeg encoder arguments; pass an empty [audio]
@@ -37,8 +39,8 @@ class TestMedia {
     List<String> filters = const [],
     List<String> extra = const [],
   }) async {
-    final path = p.join(dir.path, name);
-    await _ffmpeg([
+    final path = file(name);
+    await ffmpeg([
       '-f',
       'lavfi',
       '-i',
@@ -62,7 +64,8 @@ class TestMedia {
     return path;
   }
 
-  Future<void> _ffmpeg(List<String> args) async {
+  /// Runs FFmpeg for fixtures [clip] cannot express.
+  Future<void> ffmpeg(List<String> args) async {
     final result = await Process.run(
       paths.ffmpeg,
       ['-hide_banner', '-loglevel', 'error', '-y', ...args],

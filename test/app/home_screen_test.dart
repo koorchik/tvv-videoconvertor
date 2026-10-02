@@ -84,7 +84,10 @@ void main() {
     await tester.tap(find.text('Edit in DaVinci Resolve'));
     await tester.pump();
 
-    expect(find.textContaining('Quick fix, no quality loss'), findsOneWidget);
+    expect(
+      find.textContaining('Quick, the picture stays untouched'),
+      findsOneWidget,
+    );
     expect(find.textContaining('Ready as is'), findsOneWidget);
     expect(find.textContaining('1 video to convert'), findsOneWidget);
   });
@@ -175,8 +178,13 @@ void main() {
         );
 
         for (final term in jargon) {
+          // Whole words only: "Remove" is not a mention of the MOV file type.
+          final word = RegExp(
+            '(?<![A-Za-z0-9])${RegExp.escape(term)}(?![A-Za-z0-9])',
+            caseSensitive: false,
+          );
           expect(
-            seen.where((t) => t.toLowerCase().contains(term.toLowerCase())),
+            seen.where(word.hasMatch),
             isEmpty,
             reason: '"$term" should not appear on the main screen',
           );

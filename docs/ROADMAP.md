@@ -5,8 +5,9 @@
 - **Engine:** file inspection, per-file plans, FFmpeg runner with progress,
   graceful cancel and pause, safe output handling, capability detection
   (encoders, working hardware encoders, accepted SVT-AV1 parameters).
-- **Goals:** "Make it small" (HEVC, AV1, graphics card) and "Edit in DaVinci
-  Resolve" on Linux (Studio and free).
+- **Goals:** "Make it small" (HEVC, AV1, graphics card), "Edit in DaVinci
+  Resolve" on Linux (Studio and free), "Send to a phone", "Get the sound",
+  "Remove personal details" and "Change file type".
 - **UI:** one screen, live-editable queue, progress with time left and expected
   size, 10-second sample, keep-awake on Linux and macOS, "Show the command",
   "More options", English and Ukrainian, light and dark.
@@ -14,13 +15,11 @@
 
 ## Next
 
-1. **More goals**
-   - Phone / Telegram: small H.264 that plays on any phone, with HDR sources
-     tone-mapped.
-   - Extract audio: original track untouched, or MP3, WAV, FLAC, AAC.
-   - Remove personal metadata: quick (no quality loss) and thorough
-     (re-encode), with a report of what was removed.
-   - Change format without re-encoding.
+1. **Finish the newer goals**
+   - Remove personal details: show a report of what was removed, and offer
+     neutral file names (a name can give away a place or a date).
+   - Send to a phone: "fit into N MB" for services with a size limit.
+   - Get the sound: choose which track, or all of them.
 2. **Quality calibration.** The quality levels are starting values. Measure
    them on real footage (VMAF) and fix the numbers so that "Recommended" and
    "Best quality" mean the same across encoders.

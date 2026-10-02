@@ -145,6 +145,19 @@ enum PlanNote {
 
   /// Chroma is reduced from 4:2:2 or 4:4:4 to 4:2:0.
   chromaReduced,
+  noAudioStream,
+
+  /// HDR brightness and colour are mapped down to ordinary video.
+  hdrToneMapped,
+
+  /// HDR source, but this FFmpeg build cannot tone-map it.
+  hdrNotConverted,
+
+  /// The sound has to be converted to fit the chosen file type.
+  audioConvertedToFit,
+
+  /// The chosen file type cannot hold this kind of picture.
+  containerCannotHold,
 }
 
 /// What the scheduler needs to know to run jobs side by side without
@@ -172,6 +185,7 @@ class ConversionPlan {
     this.outputArgs = const [],
     this.keepMetadata = true,
     this.keepFileDate = true,
+    this.firstAudioOnly = false,
     this.notes = const [],
     this.estimatedBytes,
     this.cost = ResourceCost.copy,
@@ -187,6 +201,7 @@ class ConversionPlan {
       outputArgs = const [],
       keepMetadata = true,
       keepFileDate = true,
+      firstAudioOnly = false,
       estimatedBytes = null,
       cost = ResourceCost.copy;
 
@@ -201,6 +216,7 @@ class ConversionPlan {
       outputArgs = const [],
       keepMetadata = true,
       keepFileDate = true,
+      firstAudioOnly = false,
       estimatedBytes = null,
       cost = ResourceCost.copy;
 
@@ -226,6 +242,10 @@ class ConversionPlan {
 
   /// Give the output the source file's modification time.
   final bool keepFileDate;
+
+  /// Take only the first sound track instead of all of them. Audio-only
+  /// file types hold a single track.
+  final bool firstAudioOnly;
 
   final List<PlanNote> notes;
 

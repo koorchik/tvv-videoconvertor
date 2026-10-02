@@ -413,7 +413,7 @@ abstract class AppLocalizations {
   /// No description provided for @statusQuickFix.
   ///
   /// In en, this message translates to:
-  /// **'Quick fix, no quality loss'**
+  /// **'Quick, the picture stays untouched'**
   String get statusQuickFix;
 
   /// No description provided for @statusFullConversion.
@@ -425,7 +425,7 @@ abstract class AppLocalizations {
   /// No description provided for @statusUnsupported.
   ///
   /// In en, this message translates to:
-  /// **'No picture to convert'**
+  /// **'No picture in this file'**
   String get statusUnsupported;
 
   /// No description provided for @statusUnreadable.
@@ -901,6 +901,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Where the result is written'**
   String get cmdOutput;
+
+  /// No description provided for @scenarioShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to a phone'**
+  String get scenarioShareTitle;
+
+  /// No description provided for @scenarioShareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Small and plays on any phone, in Telegram and other messengers. In Telegram, send it as a file to keep this quality.'**
+  String get scenarioShareHint;
+
+  /// No description provided for @scenarioAudioTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get the sound'**
+  String get scenarioAudioTitle;
+
+  /// No description provided for @scenarioAudioHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Saves the sound of a video as a separate file.'**
+  String get scenarioAudioHint;
+
+  /// No description provided for @scenarioPrivacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove personal details'**
+  String get scenarioPrivacyTitle;
+
+  /// No description provided for @scenarioPrivacyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Removes the hidden notes about place, date, camera and author before you share a video. What is seen and heard stays the same.'**
+  String get scenarioPrivacyHint;
+
+  /// No description provided for @scenarioRemuxTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change file type'**
+  String get scenarioRemuxTitle;
+
+  /// No description provided for @scenarioRemuxHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Puts the video into another kind of file in seconds, without touching the picture quality.'**
+  String get scenarioRemuxHint;
+
+  /// No description provided for @optionSizeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get optionSizeTitle;
+
+  /// No description provided for @shareSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Smaller'**
+  String get shareSmall;
+
+  /// No description provided for @shareStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get shareStandard;
+
+  /// No description provided for @optionFormatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'File type'**
+  String get optionFormatTitle;
+
+  /// No description provided for @formatOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'As it is'**
+  String get formatOriginal;
+
+  /// No description provided for @optionModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How thoroughly'**
+  String get optionModeTitle;
+
+  /// No description provided for @modeQuick.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick'**
+  String get modeQuick;
+
+  /// No description provided for @modeThorough.
+  ///
+  /// In en, this message translates to:
+  /// **'Thorough'**
+  String get modeThorough;
+
+  /// No description provided for @modeThoroughHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Thorough rebuilds the picture and sound from scratch. It takes much longer and is the safest.'**
+  String get modeThoroughHint;
+
+  /// No description provided for @noteHdrToneMapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Very bright colours will be adjusted to look right on any screen.'**
+  String get noteHdrToneMapped;
+
+  /// No description provided for @noteHdrNotConverted.
+  ///
+  /// In en, this message translates to:
+  /// **'This video uses extra-bright colours that may look washed out on a phone.'**
+  String get noteHdrNotConverted;
+
+  /// No description provided for @noteAudioConvertedToFit.
+  ///
+  /// In en, this message translates to:
+  /// **'The sound will be converted to fit this file type.'**
+  String get noteAudioConvertedToFit;
+
+  /// No description provided for @statusNoSound.
+  ///
+  /// In en, this message translates to:
+  /// **'No sound in this file'**
+  String get statusNoSound;
+
+  /// No description provided for @statusCannotHold.
+  ///
+  /// In en, this message translates to:
+  /// **'This file type cannot hold this video'**
+  String get statusCannotHold;
 }
 
 class _AppLocalizationsDelegate

@@ -85,6 +85,9 @@ Future<void> loadRealFonts() async {
 
 /// Saves what is on screen to `build/screenshots/<name>.png`.
 Future<void> saveScreenshot(WidgetTester tester, String name) async {
+  // Lets fades finish (a button going from disabled to enabled, for one), so
+  // the image shows the settled state.
+  await tester.pump(const Duration(milliseconds: 400));
   final boundary = tester.renderObject<RenderRepaintBoundary>(
     find.byKey(_screenshotKey),
   );

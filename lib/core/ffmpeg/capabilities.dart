@@ -10,6 +10,7 @@ class Capabilities {
     required this.encoders,
     this.hardwareEncoders = const {},
     this.svtAv1Params = '',
+    this.filters = const {},
   });
 
   final String ffmpegVersion;
@@ -24,7 +25,11 @@ class Capabilities {
   /// The richest `-svtav1-params` string this SVT-AV1 version accepts.
   final String svtAv1Params;
 
+  /// Video and audio filters compiled into the build.
+  final Set<String> filters;
+
   bool hasEncoder(String name) => encoders.contains(name);
+  bool hasFilter(String name) => filters.contains(name);
   bool hasHardwareEncoder(String name) => hardwareEncoders.contains(name);
 }
 
@@ -77,6 +82,7 @@ class CapabilityProbe {
           if (working[i]) candidates[i].key,
       },
       svtAv1Params: encoders.contains('libsvtav1') ? await _svtAv1Params() : '',
+      filters: await _filters(),
     );
   }
 
@@ -89,6 +95,11 @@ class CapabilityProbe {
   Future<Set<String>> _encoders() async {
     final result = await Process.run(ffmpeg, ['-hide_banner', '-encoders']);
     return parseEncoderList(result.stdout as String);
+  }
+
+  Future<Set<String>> _filters() async {
+    final result = await Process.run(ffmpeg, ['-hide_banner', '-filters']);
+    return parseFilterList(result.stdout as String);
   }
 
   Future<bool> _testEncode(String encoder, String pixFmt) async {
@@ -184,3 +195,11 @@ Set<String> parseEncoderList(String output) {
   }
   return names;
 }
+
+final _filterLine = RegExp(r'^\s[T.][S.][C.]?\s+(\S+)\s+\S+->\S+');
+
+/// Parses `ffmpeg -filters` into the set of filter names.
+Set<String> parseFilterList(String output) => {
+  for (final line in const LineSplitter().convert(output))
+    if (_filterLine.firstMatch(line) case final match?) match.group(1)!,
+};

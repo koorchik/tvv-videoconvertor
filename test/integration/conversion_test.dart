@@ -13,8 +13,12 @@ import 'package:tvv_videoconvertor/core/media/media_info.dart';
 import 'package:tvv_videoconvertor/core/output/output_namer.dart';
 import 'package:tvv_videoconvertor/core/queue/job_executor.dart';
 import 'package:tvv_videoconvertor/core/scenarios/compress.dart';
+import 'package:tvv_videoconvertor/core/scenarios/extract_audio.dart';
+import 'package:tvv_videoconvertor/core/scenarios/remux.dart';
 import 'package:tvv_videoconvertor/core/scenarios/resolve_linux.dart';
 import 'package:tvv_videoconvertor/core/scenarios/scenario.dart';
+import 'package:tvv_videoconvertor/core/scenarios/share_phone.dart';
+import 'package:tvv_videoconvertor/core/scenarios/strip_metadata.dart';
 
 import '../support/test_media.dart';
 
@@ -305,6 +309,208 @@ void main() {
 
       expect(output.video!.bitDepth, 10);
       expect(output.video!.codec, anyOf('av1', 'hevc'));
+    });
+  });
+
+  group('Screen recordings', () {
+    test('every sound track of a multi-track MKV is converted', () async {
+      if (unavailable()) return;
+      // OBS records MKV with AAC and can write several sound tracks.
+      final source = await media!.clip(
+        'obs.mkv',
+        extra: ['-map', '0:v', '-map', '1:a', '-map', '1:a'],
+      );
+
+      final output = await convert(ResolveLinuxPreset.studio, source);
+
+      expect(output.audio.map((a) => a.codec), ['pcm_s24le', 'pcm_s24le']);
+      expect(p.extension(output.path), '.mov');
+    });
+  });
+
+  group('Send to a phone', () {
+    test('a large HDR video becomes ordinary 1080p H.264', () async {
+      if (unavailable()) return;
+      final source = await media!.clip(
+        'hdr_big.mov',
+        video: [
+          '-c:v',
+          'libx265',
+          '-preset',
+          'ultrafast',
+          '-x265-params',
+          'log-level=error',
+        ],
+        pixFmt: 'yuv420p10le',
+        size: '2560x1440',
+        filters: [hlgTags],
+      );
+
+      final output = await convert(const SharePhonePreset(), source);
+
+      expect(output.video!.codec, 'h264');
+      expect(output.video!.pixFmt, 'yuv420p');
+      expect(output.video!.width, 1920);
+      expect(output.video!.height, 1080);
+      expect(output.video!.color.transfer, 'bt709');
+      expect(output.audio.single.codec, 'aac');
+    });
+
+    test('a portrait video keeps its shape', () async {
+      if (unavailable()) return;
+      final source = await media!.clip('portrait.mp4', size: '1440x2560');
+
+      final output = await convert(const SharePhonePreset(), source);
+
+      expect(output.video!.width, 1080);
+      expect(output.video!.height, 1920);
+    });
+  });
+
+  group('Get the sound', () {
+    test('the sound track is copied into a file of its own', () async {
+      if (unavailable()) return;
+      final source = await media!.clip('with_sound.mp4');
+
+      final output = await convert(const ExtractAudioPreset(), source);
+
+      expect(p.extension(output.path), '.m4a');
+      expect(output.video, isNull);
+      expect(output.audio.single.codec, 'aac');
+    });
+
+    test('MP3 and WAV can be asked for', () async {
+      if (unavailable()) return;
+      final source = await media!.clip('to_mp3.mp4');
+
+      final mp3 = await convert(
+        const ExtractAudioPreset(),
+        source,
+        values: {'format': 'mp3'},
+      );
+      final wav = await convert(
+        const ExtractAudioPreset(),
+        source,
+        values: {'format': 'wav'},
+      );
+
+      expect(mp3.audio.single.codec, 'mp3');
+      expect(wav.audio.single.codec, 'pcm_s16le');
+    });
+  });
+
+  group('Remove personal details', () {
+    Future<String> cameraFile(String name) => media!.clip(
+      name,
+      extra: [
+        '-timecode',
+        '01:00:00:00',
+        '-metadata',
+        'title=Family trip',
+        '-metadata',
+        'artist=Jane Doe',
+        '-metadata',
+        'location=+50.4501+030.5234/',
+        '-metadata',
+        'make=Example Camera Co',
+        '-metadata',
+        'creation_time=2024-06-01T10:00:00Z',
+        '-metadata:s:v',
+        'handler_name=Camera Video',
+      ],
+    );
+
+    test('quick: no details remain and the picture is bit-identical', () async {
+      if (unavailable()) return;
+      final source = await cameraFile('private.mp4');
+      File(source).setLastModifiedSync(DateTime(2024, 6, 1, 12));
+      final before = await ffprobe.probe(source);
+      expect(before.tags, containsPair('title', 'Family trip'));
+
+      final output = await convert(const StripMetadataPreset(), source);
+
+      expect(
+        output.tags.keys,
+        everyElement(
+          isIn(['major_brand', 'minor_version', 'compatible_brands']),
+        ),
+      );
+      expect(await media!.streams(output.path, 'codec_type'), [
+        'video',
+        'audio',
+      ]);
+      final raw = await File(output.path).readAsBytes();
+      final text = String.fromCharCodes(raw);
+      for (final secret in [
+        'Family trip',
+        'Jane Doe',
+        '50.4501',
+        'Example Camera',
+      ]) {
+        expect(text, isNot(contains(secret)));
+      }
+      expect(
+        await media!.videoFingerprint(output.path),
+        await media!.videoFingerprint(source),
+      );
+      expect(
+        File(output.path).lastModifiedSync(),
+        isNot(DateTime(2024, 6, 1, 12)),
+      );
+    });
+
+    test('a sideways phone video stays the right way up', () async {
+      if (unavailable()) return;
+      final upright = await media!.clip('phone.mp4');
+      final rotated = media!.file('phone_rotated.mp4');
+      await media!.ffmpeg([
+        '-display_rotation',
+        '90',
+        '-i',
+        upright,
+        '-c',
+        'copy',
+        rotated,
+      ]);
+      final rotation = (await ffprobe.probe(rotated)).video!.rotation;
+      expect(rotation, isNot(0));
+
+      final output = await convert(const StripMetadataPreset(), rotated);
+
+      expect(output.video!.rotation, rotation);
+    });
+
+    test('thorough: the picture is rebuilt and details are gone', () async {
+      if (unavailable()) return;
+      final source = await cameraFile('private_thorough.mp4');
+
+      final output = await convert(
+        const StripMetadataPreset(),
+        source,
+        values: {'mode': 'thorough'},
+      );
+
+      expect(output.tags.keys, isNot(contains('title')));
+      expect(
+        await media!.videoFingerprint(output.path),
+        isNot(await media!.videoFingerprint(source)),
+      );
+    });
+  });
+
+  group('Change file type', () {
+    test('MKV to MP4 moves the picture without re-encoding', () async {
+      if (unavailable()) return;
+      final source = await media!.clip('recording.mkv');
+
+      final output = await convert(const RemuxPreset(), source);
+
+      expect(p.extension(output.path), '.mp4');
+      expect(output.isMovFamily, isTrue);
+      expect(
+        await media!.videoFingerprint(output.path),
+        await media!.videoFingerprint(source),
+      );
     });
   });
 

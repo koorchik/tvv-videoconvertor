@@ -98,6 +98,10 @@ The UI renders presets and options generically; it needs no other change.
   warning ("Error parsing option") and exit code 0. `CapabilityProbe` checks
   the warning text, not just the exit code.
 - **MOV cannot hold AV1 or VP9** when written by FFmpeg; those go to MP4.
+- **Muxer-specific options** such as `-write_tmcd` and `-movflags` make
+  FFmpeg fail on other containers; add them only for MP4/MOV.
+- **Tone mapping** needs the `zscale` and `tonemap` filters, which not every
+  build has; `Capabilities.hasFilter` is checked first.
 - **Cancel:** `q` on stdin makes FFmpeg finish the file and exit with code 0,
   so the runner tracks cancellation itself.
 - **Hardware encoders:** being listed by `ffmpeg -encoders` means compiled in,

@@ -13,6 +13,10 @@ import '../../l10n/app_localizations.dart';
 IconData scenarioIcon(String scenarioId) => switch (scenarioId) {
   'compress' => Icons.compress_rounded,
   'resolve' => Icons.movie_edit,
+  'share' => Icons.smartphone_rounded,
+  'audio' => Icons.music_note_rounded,
+  'privacy' => Icons.shield_outlined,
+  'remux' => Icons.swap_horiz_rounded,
   _ => Icons.auto_awesome_rounded,
 };
 
@@ -20,6 +24,10 @@ String scenarioTitle(AppLocalizations l10n, String scenarioId) =>
     switch (scenarioId) {
       'compress' => l10n.scenarioCompressTitle,
       'resolve' => l10n.scenarioResolveTitle,
+      'share' => l10n.scenarioShareTitle,
+      'audio' => l10n.scenarioAudioTitle,
+      'privacy' => l10n.scenarioPrivacyTitle,
+      'remux' => l10n.scenarioRemuxTitle,
       _ => scenarioId,
     };
 
@@ -27,6 +35,10 @@ String scenarioHint(AppLocalizations l10n, String scenarioId) =>
     switch (scenarioId) {
       'compress' => l10n.scenarioCompressHint,
       'resolve' => l10n.scenarioResolveHint,
+      'share' => l10n.scenarioShareHint,
+      'audio' => l10n.scenarioAudioHint,
+      'privacy' => l10n.scenarioPrivacyHint,
+      'remux' => l10n.scenarioRemuxHint,
       _ => '',
     };
 
@@ -53,6 +65,9 @@ String optionTitle(AppLocalizations l10n, String presetId, String optionId) =>
     switch (optionId) {
       'convertVideo' => l10n.convertVideoTitle,
       'codec' => l10n.optionCodecTitle,
+      'size' => l10n.optionSizeTitle,
+      'format' => l10n.optionFormatTitle,
+      'mode' => l10n.optionModeTitle,
       'quality' when presetId.startsWith('resolve') => l10n.sizeTitle,
       'quality' => l10n.qualityTitle,
       _ => optionId,
@@ -60,6 +75,7 @@ String optionTitle(AppLocalizations l10n, String presetId, String optionId) =>
 
 String optionHint(AppLocalizations l10n, String optionId) => switch (optionId) {
   'convertVideo' => l10n.convertVideoHint,
+  'mode' => l10n.modeThoroughHint,
   _ => '',
 };
 
@@ -72,6 +88,19 @@ String choiceLabel(AppLocalizations l10n, String presetId, String choice) =>
       'smaller' => l10n.sizeSmaller,
       'balanced' => l10n.sizeBalanced,
       'best' => l10n.sizeBest,
+      'small' => l10n.shareSmall,
+      'standard' => l10n.shareStandard,
+      'original' => l10n.formatOriginal,
+      'quick' => l10n.modeQuick,
+      'thorough' => l10n.modeThorough,
+      // File type names are written the same everywhere.
+      'mp3' ||
+      'm4a' ||
+      'wav' ||
+      'flac' ||
+      'mp4' ||
+      'mkv' ||
+      'mov' => choice.toUpperCase(),
       // Format names are the same in every language.
       'prores' => 'ProRes',
       'dnxhr' => 'DNxHR',

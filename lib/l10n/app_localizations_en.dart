@@ -471,6 +471,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageSystem => 'Same as the computer';
 
   @override
+  String get lookTitle => 'Look';
+
+  @override
+  String get lookCozy => 'Cozy';
+
+  @override
+  String get lookPro => 'Professional';
+
+  @override
   String get techPictureCopied => 'picture copied as is';
 
   @override

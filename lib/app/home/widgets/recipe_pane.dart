@@ -15,10 +15,13 @@ import '../../recipe/recipe.dart';
 import '../../recipe/recipe_controller.dart';
 import '../../sources/preview_controller.dart';
 import '../../sources/sources_controller.dart';
+import '../../theme.dart';
+import '../headings.dart';
 import '../scenario_texts.dart';
 import '../technical_text.dart';
 import 'command_dialog.dart';
 import 'language_button.dart';
+import 'look_button.dart';
 
 /// The right-hand panel: what to do with the selected videos, and the
 /// buttons that queue them.
@@ -38,6 +41,7 @@ class RecipePane extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
+    final look = AppLook.of(context);
     final settings = ref.watch(recipeProvider);
     final recipe = settings.recipe;
     final controller = ref.read(recipeProvider.notifier);
@@ -90,12 +94,7 @@ class RecipePane extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              l10n.recipeTitleNone,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            PaneTitle(l10n.recipeTitleNone),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -109,6 +108,7 @@ class RecipePane extends ConsumerWidget {
                                 ),
                               ),
                             ),
+                            const LookButton(),
                             const LanguageButton(),
                           ],
                         ),
@@ -136,13 +136,11 @@ class RecipePane extends ConsumerWidget {
                                   value: preset.id,
                                   label: _SegmentLabel(
                                     presetTitle(l10n, preset.id),
-                                    caption: TechnicalText(
-                                      presetCaption(
-                                        l10n,
-                                        preset,
-                                        recipe.values,
-                                        capabilities,
-                                      ),
+                                    caption: presetCaption(
+                                      l10n,
+                                      preset,
+                                      recipe.values,
+                                      capabilities,
                                     ),
                                   ),
                                 ),
@@ -182,14 +180,16 @@ class RecipePane extends ConsumerWidget {
                                 value: SampleChoice.start,
                                 label: _SegmentLabel(
                                   l10n.convertSampleShort,
-                                  caption: _Caption(l10n.sampleFirst),
+                                  caption: l10n.sampleFirst,
+                                  technicalCaption: false,
                                 ),
                               ),
                               ButtonSegment(
                                 value: SampleChoice.middle,
                                 label: _SegmentLabel(
                                   l10n.convertSampleShort,
-                                  caption: _Caption(l10n.sampleMiddle),
+                                  caption: l10n.sampleMiddle,
+                                  technicalCaption: false,
                                 ),
                               ),
                             ],
@@ -207,7 +207,11 @@ class RecipePane extends ConsumerWidget {
                 const _Gap(),
                 Row(
                   children: [
-                    Icon(Icons.tune_rounded, size: 14, color: muted),
+                    Icon(
+                      Icons.tune_rounded,
+                      size: 14,
+                      color: look.hues?.violet.deep ?? muted,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: TechnicalText(technicalSummary(l10n, shownPlan)),
@@ -349,15 +353,31 @@ class _ScenarioTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final look = AppLook.of(context);
+    // Where the look has colours, each goal has its own: a pale tile with
+    // the icon in the full colour, and the chosen one deeper and outlined.
+    final hue = look.hues?.at(scenarios.indexOf(scenario));
+    final Color fill, edge, iconColor;
+    if (hue != null) {
+      fill = selected ? hue.soft : Color.lerp(scheme.surface, hue.soft, 0.45)!;
+      edge = selected ? hue.deep : Color.lerp(hue.soft, hue.deep, 0.2)!;
+      iconColor = hue.deep;
+    } else {
+      fill = selected ? scheme.primaryContainer : scheme.surface;
+      edge = selected ? scheme.primary : scheme.outlineVariant;
+      iconColor = selected
+          ? scheme.onPrimaryContainer
+          : scheme.onSurfaceVariant;
+    }
     return Tooltip(
       message: scenarioHint(l10n, scenario.id),
       child: Material(
-        color: selected ? scheme.primaryContainer : scheme.surface,
+        color: fill,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(look.controlRadius),
           side: BorderSide(
-            color: selected ? scheme.primary : scheme.outlineVariant,
-            width: selected ? 2 : 1,
+            color: edge,
+            width: selected ? look.selectedBorderWidth : 1,
           ),
         ),
         clipBehavior: Clip.antiAlias,
@@ -369,11 +389,7 @@ class _ScenarioTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
                 children: [
-                  Icon(
-                    scenarioIcon(scenario.id),
-                    size: 20,
-                    color: selected ? scheme.primary : scheme.onSurfaceVariant,
-                  ),
+                  Icon(scenarioIcon(scenario.id), size: 20, color: iconColor),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -384,7 +400,9 @@ class _ScenarioTile extends StatelessWidget {
                         fontSize: 12.5,
                         height: 1.15,
                         fontWeight: FontWeight.w600,
-                        color: selected ? scheme.onPrimaryContainer : null,
+                        color: selected && hue == null
+                            ? scheme.onPrimaryContainer
+                            : null,
                       ),
                     ),
                   ),
@@ -435,15 +453,7 @@ class _LabeledRow extends StatelessWidget {
       padding: EdgeInsets.only(top: _Spacing.gap(context)),
       child: Row(
         children: [
-          SizedBox(
-            width: RecipePane.labelWidth,
-            child: Text(
-              label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-          ),
+          SizedBox(width: RecipePane.labelWidth, child: ControlLabel(label)),
           Expanded(child: child),
         ],
       ),
@@ -512,17 +522,14 @@ class _OptionRow extends StatelessWidget {
             value: choice,
             label: _SegmentLabel(
               choiceLabel(l10n, preset.id, choice),
-              caption: switch (choiceCaption(
+              caption: choiceCaption(
                 l10n,
                 preset,
                 option.id,
                 choice,
                 values,
                 capabilities,
-              )) {
-                final caption? => TechnicalText(caption),
-                null => null,
-              },
+              ),
             ),
           ),
       ],
@@ -541,7 +548,7 @@ class _OptionRow extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
-            child: Text(title, style: theme.textTheme.titleSmall),
+            child: ControlLabel(title),
           ),
           choices,
         ],
@@ -553,29 +560,47 @@ class _OptionRow extends StatelessWidget {
 /// A segmented-button label, optionally with a small caption under it. It
 /// shrinks slightly rather than wrapping when a translation is long.
 class _SegmentLabel extends StatelessWidget {
-  const _SegmentLabel(this.text, {this.caption});
+  const _SegmentLabel(this.text, {this.caption, this.technicalCaption = true});
 
   final String text;
-  final Widget? caption;
+  final String? caption;
+
+  /// Whether the caption is a technical name rather than plain words.
+  final bool technicalCaption;
 
   @override
-  Widget build(BuildContext context) => FittedBox(
-    fit: BoxFit.scaleDown,
-    child: Padding(
-      padding: EdgeInsets.symmetric(vertical: _Spacing.segmentPadding(context)),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [Text(text, maxLines: 1, softWrap: false), ?caption],
+  Widget build(BuildContext context) {
+    // The caption is a quieter shade of the label's own colour, which is
+    // not the same on the chosen segment as on the others.
+    final quiet = DefaultTextStyle.of(context).style.color
+        ?.withValues(alpha: 0.7);
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          vertical: _Spacing.segmentPadding(context),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(text, maxLines: 1, softWrap: false),
+            if (caption case final caption?)
+              technicalCaption
+                  ? TechnicalText(caption, color: quiet)
+                  : _Caption(caption, color: quiet),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// A plain-language caption under a segment label.
 class _Caption extends StatelessWidget {
-  const _Caption(this.text);
+  const _Caption(this.text, {this.color});
 
   final String text;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -584,7 +609,7 @@ class _Caption extends StatelessWidget {
       text,
       maxLines: 1,
       style: theme.textTheme.labelSmall?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
+        color: color ?? theme.colorScheme.onSurfaceVariant,
       ),
     );
   }
@@ -675,7 +700,9 @@ class _SaveLocation extends ConsumerWidget {
         Icon(
           Icons.folder_outlined,
           size: 18,
-          color: theme.colorScheme.onSurfaceVariant,
+          color:
+              AppLook.of(context).hues?.amber.deep ??
+              theme.colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: 8),
         Expanded(

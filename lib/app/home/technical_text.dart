@@ -4,29 +4,45 @@ import '../../core/ffmpeg/capabilities.dart';
 import '../../core/media/media_info.dart';
 import '../../core/scenarios/scenario.dart';
 import '../../l10n/app_localizations.dart';
+import '../theme.dart';
 
-/// Technical detail shown beside a plain-language label: smaller and quieter,
-/// so it informs people who want it without being in the way of those who do
-/// not. Technical terms on the main screen appear only through this widget;
-/// a test holds the UI to that.
+/// Technical detail shown beside a plain-language label: smaller and quieter
+/// (and, in the professional look, in the fixed-width font), so it informs
+/// people who want it without being in the way of those who do not.
+/// Technical terms on the main screen appear only through this widget; a
+/// test holds the UI to that.
 class TechnicalText extends StatelessWidget {
-  const TechnicalText(this.text, {super.key, this.align});
+  const TechnicalText(this.text, {super.key, this.align, this.color});
 
   final String text;
   final TextAlign? align;
 
+  /// Null for the usual quiet colour. Given where that would not show, such
+  /// as on a chosen segment.
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final quiet = color ?? theme.colorScheme.onSurfaceVariant;
+    final small = theme.textTheme.labelSmall;
     return Text(
       text,
       textAlign: align,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: theme.textTheme.labelSmall?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-        letterSpacing: 0.2,
-      ),
+      style: AppLook.of(context).monoCaptions
+          ? small?.copyWith(
+              fontFamily: monoFontFamily,
+              fontSize: 10,
+              fontWeight: FontWeight.w400,
+              // The line stays as tall as in the interface font, so rows
+              // are the same height in both looks.
+              height: 1.6,
+              letterSpacing: 0,
+              color: quiet,
+            )
+          : small?.copyWith(color: quiet, letterSpacing: 0.2),
     );
   }
 }

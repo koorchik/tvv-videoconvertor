@@ -16,8 +16,9 @@
   keep-awake on Linux and macOS; closing the window asks first while
   converting, and FFmpeg is stopped before the app goes; "Show the command";
   technical names beside plain labels; English and Ukrainian with a
-  switcher; light and dark.
-  Language, last goal and output folder are remembered.
+  switcher; two looks with a switcher, a warm light one and a dark
+  professional one.
+  Language, look, last goal and output folder are remembered.
 - **App icon** for the three platforms, drawn by `tool/make_icons.dart`.
 - **CI:** analysis, tests and release builds for Linux, Windows and macOS.
 

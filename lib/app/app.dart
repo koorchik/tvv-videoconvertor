@@ -10,7 +10,6 @@ class VideoConverterApp extends ConsumerWidget {
   const VideoConverterApp({
     super.key,
     this.locale,
-    this.themeMode,
     this.home = const HomeScreen(),
   });
 
@@ -20,9 +19,6 @@ class VideoConverterApp extends ConsumerWidget {
   /// and without one the computer's language.
   final Locale? locale;
 
-  /// Null follows the system's light or dark setting.
-  final ThemeMode? themeMode;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
@@ -31,9 +27,7 @@ class VideoConverterApp extends ConsumerWidget {
       locale: locale ?? ref.watch(localeProvider),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      theme: buildTheme(Brightness.light),
-      darkTheme: buildTheme(Brightness.dark),
-      themeMode: themeMode ?? ThemeMode.system,
+      theme: buildTheme(ref.watch(lookProvider)),
       home: home,
     );
   }

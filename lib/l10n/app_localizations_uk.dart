@@ -471,6 +471,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get languageSystem => 'Як на комп’ютері';
 
   @override
+  String get lookTitle => 'Вигляд';
+
+  @override
+  String get lookCozy => 'Затишний';
+
+  @override
+  String get lookPro => 'Професійний';
+
+  @override
   String get techPictureCopied => 'зображення без змін';
 
   @override

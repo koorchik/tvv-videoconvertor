@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tvv_videoconvertor/app/app.dart';
 import 'package:tvv_videoconvertor/app/home/technical_text.dart';
 import 'package:tvv_videoconvertor/app/providers.dart';
+import 'package:tvv_videoconvertor/app/window.dart';
 import 'package:tvv_videoconvertor/core/media/ffprobe.dart';
 import 'package:tvv_videoconvertor/core/settings/settings_store.dart';
 
@@ -450,6 +451,58 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await pumpApp(tester, FakeEnvironment(), locale: null, settings: settings);
     expect(find.text('Додати в чергу'), findsOneWidget);
+  });
+
+  testWidgets('the menus in the corner of the window open inside it', (
+    tester,
+  ) async {
+    await pumpApp(tester, env, size: minimumWindowSize);
+    final window = Offset.zero & minimumWindowSize;
+
+    Future<void> expectInside(Finder button, String choice) async {
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      final item = tester.getRect(
+        find.ancestor(
+          of: find.text(choice),
+          matching: find.byWidgetPredicate((w) => w is PopupMenuItem),
+        ),
+      );
+      // Clear of the edge, not merely on screen: a menu touching the edge
+      // has its side and shadow cut off.
+      expect(window.deflate(8).contains(item.topLeft), isTrue);
+      expect(window.deflate(8).contains(item.bottomRight), isTrue);
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+    }
+
+    await expectInside(
+      find.byIcon(Icons.translate_rounded),
+      'Same as the computer',
+    );
+    await expectInside(find.byTooltip('Look'), 'Professional');
+  });
+
+  testWidgets('the look can be switched and is remembered', (tester) async {
+    Brightness brightness() =>
+        Theme.of(tester.element(find.byType(Scaffold))).brightness;
+
+    final settings = MemorySettingsStore();
+    await pumpApp(tester, env, settings: settings);
+    expect(brightness(), Brightness.light);
+    expect(find.text('What to do'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Look'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Professional'));
+    await tester.pumpAndSettle();
+    expect(brightness(), Brightness.dark);
+    // Pane titles are in capitals in the professional look.
+    expect(find.text('WHAT TO DO'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await pumpApp(tester, FakeEnvironment(), settings: settings);
+    expect(brightness(), Brightness.dark);
   });
 
   testWidgets('a missing video engine is explained', (tester) async {

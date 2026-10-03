@@ -11,6 +11,7 @@ import '../../queue/queue_state.dart';
 import '../../sources/preview_controller.dart';
 import '../../sources/sources_controller.dart';
 import '../../theme.dart';
+import '../headings.dart';
 import '../technical_text.dart';
 import 'command_dialog.dart';
 import 'media_details_dialog.dart';
@@ -63,12 +64,7 @@ class VideosPane extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              l10n.yourVideos,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            PaneTitle(l10n.yourVideos),
                             Text(
                               '${l10n.videoCount(state.videos.length)}  ·  '
                               '${format.bytes(totalBytes)}',
@@ -169,6 +165,7 @@ class _EmptyState extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final look = AppLook.of(context);
     return Center(
       child: SingleChildScrollView(
         child: Column(
@@ -178,13 +175,16 @@ class _EmptyState extends StatelessWidget {
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                color: scheme.primaryContainer,
-                shape: BoxShape.circle,
+                color: look.badge.soft,
+                borderRadius: BorderRadius.circular(look.paneRadius),
+                border: look.flat
+                    ? Border.all(color: scheme.outlineVariant)
+                    : null,
               ),
               child: Icon(
                 Icons.video_library_rounded,
                 size: 40,
-                color: scheme.onPrimaryContainer,
+                color: look.badge.deep,
               ),
             ),
             const SizedBox(height: 20),
@@ -224,6 +224,7 @@ class _VideoTile extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final look = AppLook.of(context);
     final format = Formatter(l10n);
     final sources = ref.read(sourcesProvider.notifier);
     final selected = ref.watch(
@@ -263,14 +264,12 @@ class _VideoTile extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Material(
-        color: selected
-            ? scheme.primaryContainer.withValues(alpha: 0.45)
-            : scheme.surface,
+        color: selected ? look.selectedRow : scheme.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(look.panelRadius),
           side: BorderSide(
             color: selected ? scheme.primary : scheme.outlineVariant,
-            width: selected ? 1.5 : 1,
+            width: selected ? look.selectedBorderWidth : 1,
           ),
         ),
         clipBehavior: Clip.antiAlias,

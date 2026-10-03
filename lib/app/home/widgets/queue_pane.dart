@@ -14,6 +14,7 @@ import '../../providers.dart';
 import '../../queue/queue_controller.dart';
 import '../../queue/queue_state.dart';
 import '../../theme.dart';
+import '../headings.dart';
 import '../scenario_texts.dart';
 import '../technical_text.dart';
 import 'command_dialog.dart';
@@ -41,12 +42,7 @@ class QueuePane extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Text(
-                  l10n.queueTitle,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                PaneTitle(l10n.queueTitle),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
@@ -194,6 +190,7 @@ class _JobTile extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final look = AppLook.of(context);
     final format = Formatter(l10n);
     final queue = ref.read(queueProvider.notifier);
     final key = estimateKey(job.path, job.recipe);
@@ -207,10 +204,10 @@ class _JobTile extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(look.panelRadius),
         border: Border.all(
           color: job.isActive ? scheme.primary : scheme.outlineVariant,
-          width: job.isActive ? 1.5 : 1,
+          width: job.isActive ? look.selectedBorderWidth : 1,
         ),
       ),
       child: Row(
@@ -343,6 +340,7 @@ class _JobTile extends ConsumerWidget {
   ) {
     final queue = ref.read(queueProvider.notifier);
     final output = job.result?.outputPath;
+    final hues = AppLook.of(context).hues;
     switch (job.status) {
       case JobStatus.waiting:
         return [
@@ -366,12 +364,12 @@ class _JobTile extends ConsumerWidget {
           if (output != null) ...[
             IconButton(
               tooltip: l10n.play,
-              icon: const Icon(Icons.play_arrow_rounded),
+              icon: Icon(Icons.play_arrow_rounded, color: hues?.green.deep),
               onPressed: () => openWithDefaultApp(output),
             ),
             IconButton(
               tooltip: l10n.showInFolder,
-              icon: const Icon(Icons.folder_open_rounded),
+              icon: Icon(Icons.folder_open_rounded, color: hues?.amber.deep),
               onPressed: () => revealInFileManager(output),
             ),
           ],
@@ -386,7 +384,7 @@ class _JobTile extends ConsumerWidget {
             ),
           IconButton(
             tooltip: l10n.retry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: Icon(Icons.refresh_rounded, color: hues?.blue.deep),
             onPressed: () => queue.retry(job.id),
           ),
         ];
@@ -485,7 +483,7 @@ class _JobTile extends ConsumerWidget {
         content: SingleChildScrollView(
           child: SelectableText(
             job.result?.errorLines.join('\n') ?? '',
-            style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13),
+            style: const TextStyle(fontFamily: monoFontFamily, fontSize: 13),
           ),
         ),
         actions: [
@@ -509,7 +507,6 @@ class _GoalLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     final preset = findPreset(job.recipe.presetId)!;
     final scenario = scenarios.firstWhere((s) => s.presets.contains(preset));
     // What was chosen, in the words of the panel: goal, variant, options.
@@ -518,16 +515,20 @@ class _GoalLine extends StatelessWidget {
       if (scenario.presets.length > 1) presetTitle(l10n, preset.id),
       ...chosenOptions(l10n, preset, job.recipe.values),
     ].join(' · ');
+    // In the goal's own colour, where the look gives goals colours.
+    final look = AppLook.of(context);
+    final color =
+        look.hues?.at(scenarios.indexOf(scenario)).deep ?? look.jobGoal;
     return Row(
       children: [
-        Icon(scenarioIcon(scenario.id), size: 14, color: scheme.primary),
+        Icon(scenarioIcon(scenario.id), size: 14, color: color),
         const SizedBox(width: 5),
         Flexible(
           child: Text(
             plain,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelLarge?.copyWith(color: scheme.primary),
+            style: theme.textTheme.labelLarge?.copyWith(color: color),
           ),
         ),
       ],
@@ -543,16 +544,19 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      // With the border, as tall as the file name beside it.
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
       decoration: BoxDecoration(
-        color: theme.colorScheme.tertiaryContainer,
-        borderRadius: BorderRadius.circular(8),
+        color: scheme.tertiaryContainer,
+        borderRadius: BorderRadius.circular(AppLook.of(context).tagRadius),
+        border: Border.all(color: scheme.tertiary.withValues(alpha: 0.4)),
       ),
       child: Text(
         text,
         style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onTertiaryContainer,
+          color: scheme.onTertiaryContainer,
         ),
       ),
     );
@@ -567,6 +571,7 @@ class _StatusIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final look = AppLook.of(context);
     final success = SuccessColors.of(context);
     final (icon, background, foreground) = switch (job.status) {
       JobStatus.done || JobStatus.skipped => (
@@ -596,8 +601,8 @@ class _StatusIcon extends StatelessWidget {
       ),
       JobStatus.waiting => (
         job.isSample ? Icons.visibility_outlined : Icons.schedule_rounded,
-        scheme.surfaceContainerHighest,
-        scheme.onSurfaceVariant,
+        look.waiting.soft,
+        look.waiting.deep,
       ),
     };
     return Container(
@@ -605,7 +610,7 @@ class _StatusIcon extends StatelessWidget {
       height: 38,
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(look.controlRadius),
       ),
       child: Icon(icon, size: 20, color: foreground),
     );

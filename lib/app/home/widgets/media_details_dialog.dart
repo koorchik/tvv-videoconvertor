@@ -8,11 +8,11 @@ import '../../../core/media/media_info.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../format.dart';
 import '../../providers.dart';
+import '../../theme.dart';
+import '../headings.dart';
 import '../technical_text.dart';
 
 enum _View { encoding, metadata, report }
-
-const _mono = 'JetBrains Mono';
 
 /// Everything known about a video file: a frame from it and its key facts at
 /// the top, then how it is encoded, every metadata tag, or FFmpeg's full
@@ -214,8 +214,9 @@ class _Header extends StatelessWidget {
                         Icons.aspect_ratio_rounded,
                         '${format.resolution(video)}  '
                         '${video.width}×${video.height}',
+                        kind: 0,
                       ),
-                      _Fact(Icons.movie_outlined, sourceFormat(video)),
+                      _Fact(Icons.movie_outlined, sourceFormat(video), kind: 1),
                       if (video.color.isHdr)
                         _Fact(
                           Icons.hdr_on_rounded,
@@ -226,19 +227,26 @@ class _Header extends StatelessWidget {
                         _Fact(
                           Icons.speed_rounded,
                           '${_trim(rate.toStringAsFixed(2))} fps',
+                          kind: 2,
                         ),
                     ],
                     if (audio != null)
                       _Fact(
                         Icons.graphic_eq_rounded,
                         '${audioFormat(audio)}  ${_channels(audio.channels)}',
+                        kind: 3,
                       ),
                     _Fact(
                       Icons.sd_storage_outlined,
                       format.bytes(info.sizeBytes),
+                      kind: 4,
                     ),
                     if (info.bitRate case final bitRate?)
-                      _Fact(Icons.data_usage_rounded, formatBitrate(bitRate)),
+                      _Fact(
+                        Icons.data_usage_rounded,
+                        formatBitrate(bitRate),
+                        kind: 5,
+                      ),
                   ],
                 ),
               ],
@@ -279,9 +287,9 @@ class _Thumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final look = AppLook.of(context);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(look.panelRadius),
       child: SizedBox(
         width: 192,
         height: 108,
@@ -289,18 +297,12 @@ class _Thumbnail extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             // Shown until the frame arrives, and for files without one.
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [scheme.primaryContainer, scheme.tertiaryContainer],
-                ),
-              ),
+            ColoredBox(
+              color: look.badge.soft,
               child: Icon(
                 audioOnly ? Icons.graphic_eq_rounded : Icons.movie_outlined,
                 size: 40,
-                color: scheme.onPrimaryContainer.withValues(alpha: 0.7),
+                color: look.badge.deep.withValues(alpha: 0.7),
               ),
             ),
             FutureBuilder<Uint8List?>(
@@ -323,7 +325,7 @@ class _Thumbnail extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.65),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(look.tagRadius),
                 ),
                 child: Text(
                   duration,
@@ -344,7 +346,7 @@ class _Thumbnail extends StatelessWidget {
 
 /// One key fact as a small rounded label.
 class _Fact extends StatelessWidget {
-  const _Fact(this.icon, this.text, {this.highlight = false});
+  const _Fact(this.icon, this.text, {this.highlight = false, this.kind = 0});
 
   final IconData icon;
   final String text;
@@ -352,26 +354,41 @@ class _Fact extends StatelessWidget {
   /// For facts worth noticing, such as HDR.
   final bool highlight;
 
+  /// Which fact of the row this is; each gets its own colour, where the
+  /// look has colours.
+  final int kind;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final look = AppLook.of(context);
+    final hue = highlight ? null : look.hues?.at(kind);
     final background = highlight
         ? scheme.tertiaryContainer
-        : scheme.surfaceContainerHighest;
+        : hue?.soft ?? scheme.surfaceContainerHighest;
     final foreground = highlight
         ? scheme.onTertiaryContainer
         : scheme.onSurface;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(look.tagRadius),
+        border: Border.all(
+          color: highlight
+              ? scheme.tertiary.withValues(alpha: 0.4)
+              : hue?.soft ?? scheme.outlineVariant,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: foreground.withValues(alpha: 0.75)),
+          Icon(
+            icon,
+            size: 15,
+            color: hue?.deep ?? foreground.withValues(alpha: 0.75),
+          ),
           const SizedBox(width: 5),
           Text(
             text,
@@ -581,7 +598,7 @@ class _MetadataView extends StatelessWidget {
                                     softWrap: false,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontFamily: _mono,
+                                      fontFamily: monoFontFamily,
                                       fontSize: 12.5,
                                       height: 1.5,
                                       color: scheme.onSurfaceVariant,
@@ -625,16 +642,22 @@ class _ReportView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(16),
+        color: scheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppLook.of(context).panelRadius),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: SelectableText(
         fullReport(raw),
-        style: const TextStyle(fontFamily: _mono, fontSize: 12.5, height: 1.5),
+        style: const TextStyle(
+          fontFamily: monoFontFamily,
+          fontSize: 12.5,
+          height: 1.5,
+        ),
       ),
     );
   }
@@ -660,11 +683,14 @@ class _Card extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final look = AppLook.of(context);
+    // Each kind of track has its colour, where the look has colours.
+    final mark = look.hues?.at(group.index) ?? look.badge;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(look.panelRadius),
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Column(
@@ -676,26 +702,17 @@ class _Card extends StatelessWidget {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: scheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(9),
+                  color: mark.soft,
+                  borderRadius: BorderRadius.circular(look.tagRadius),
                 ),
-                child: Icon(
-                  _icon(group),
-                  size: 17,
-                  color: scheme.onPrimaryContainer,
-                ),
+                child: Icon(_icon(group), size: 17, color: mark.deep),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    ControlLabel(title, strong: true),
                     if (subtitle != null)
                       Tooltip(
                         message: subtitle,

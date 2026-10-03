@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tvv_videoconvertor/app/home/widgets/recipe_pane.dart';
 import 'package:tvv_videoconvertor/app/recipe/recipe.dart';
 import 'package:tvv_videoconvertor/app/recipe/recipe_controller.dart';
+import 'package:tvv_videoconvertor/app/theme.dart';
 import 'package:tvv_videoconvertor/app/window.dart';
 import 'package:tvv_videoconvertor/core/scenarios/registry.dart';
 import 'package:tvv_videoconvertor/core/scenarios/scenario.dart';
@@ -73,64 +74,71 @@ void main() {
     'default window': defaultWindowSize,
   };
 
-  for (final locale in const [Locale('en'), Locale('uk')]) {
-    for (final MapEntry(key: name, value: size) in sizes.entries) {
-      testWidgets(
-        'the settings panel shows everything, uncut, without scrolling: '
-        '$name, ${locale.languageCode}',
-        (tester) async {
-          final env = FakeEnvironment(capabilities: withGpu({'av1_nvenc'}));
-          env.ffprobe.add('/videos/a.mp4');
-          env.ffprobe.add('/videos/b.mp4');
-          final sources = await pumpApp(
-            tester,
-            env,
-            locale: locale,
-            size: size,
-          );
-          await addVideos(tester, sources, ['/videos/a.mp4', '/videos/b.mp4']);
-          // One of two selected: both buttons and a full summary are shown.
-          sources.select(0);
-          final recipe = ProviderScope.containerOf(
-            tester.element(find.byType(RecipePane)),
-          ).read(recipeProvider.notifier);
+  // The looks letter their labels differently, so each is checked.
+  final cases = [
+    for (final look in Look.values)
+      for (final locale in const [Locale('en'), Locale('uk')])
+        for (final MapEntry(key: name, value: size) in sizes.entries)
+          (look: look, locale: locale, name: name, size: size),
+  ];
 
-          final tooTall = <String>[];
-          final badText = <String>{};
-          for (final scenario in scenarios) {
-            for (final preset in scenario.presets) {
-              for (final values in combinations(preset.options)) {
-                for (final sample in SampleChoice.values) {
-                  recipe.load(Recipe(presetId: preset.id, values: values));
-                  recipe.setSample(sample);
-                  await tester.pump();
-                  final scrollable = tester.state<ScrollableState>(
-                    find
-                        .descendant(
-                          of: find.byType(RecipePane),
-                          matching: find.byType(Scrollable),
-                        )
-                        .first,
+  for (final (:look, :locale, :name, :size) in cases) {
+    testWidgets(
+      'the settings panel shows everything, uncut, without scrolling: '
+      '$name, ${locale.languageCode}, ${look.name}',
+      (tester) async {
+        final env = FakeEnvironment(capabilities: withGpu({'av1_nvenc'}));
+        env.ffprobe.add('/videos/a.mp4');
+        env.ffprobe.add('/videos/b.mp4');
+        final sources = await pumpApp(
+          tester,
+          env,
+          locale: locale,
+          look: look,
+          size: size,
+        );
+        await addVideos(tester, sources, ['/videos/a.mp4', '/videos/b.mp4']);
+        // One of two selected: both buttons and a full summary are shown.
+        sources.select(0);
+        final recipe = ProviderScope.containerOf(
+          tester.element(find.byType(RecipePane)),
+        ).read(recipeProvider.notifier);
+
+        final tooTall = <String>[];
+        final badText = <String>{};
+        for (final scenario in scenarios) {
+          for (final preset in scenario.presets) {
+            for (final values in combinations(preset.options)) {
+              for (final sample in SampleChoice.values) {
+                recipe.load(Recipe(presetId: preset.id, values: values));
+                recipe.setSample(sample);
+                await tester.pump();
+                final scrollable = tester.state<ScrollableState>(
+                  find
+                      .descendant(
+                        of: find.byType(RecipePane),
+                        matching: find.byType(Scrollable),
+                      )
+                      .first,
+                );
+                final overflow = scrollable.position.maxScrollExtent;
+                if (overflow > 0) {
+                  tooTall.add(
+                    '${preset.id} $values ${sample.name}: '
+                    '${overflow.round()} px too tall',
                   );
-                  final overflow = scrollable.position.maxScrollExtent;
-                  if (overflow > 0) {
-                    tooTall.add(
-                      '${preset.id} $values ${sample.name}: '
-                      '${overflow.round()} px too tall',
-                    );
-                  }
-                  for (final problem in textProblems(tester)) {
-                    badText.add('${preset.id} $values: $problem');
-                  }
+                }
+                for (final problem in textProblems(tester)) {
+                  badText.add('${preset.id} $values: $problem');
                 }
               }
             }
           }
+        }
 
-          expect(tooTall, isEmpty, reason: tooTall.join('\n'));
-          expect(badText, isEmpty, reason: badText.join('\n'));
-        },
-      );
-    }
+        expect(tooTall, isEmpty, reason: tooTall.join('\n'));
+        expect(badText, isEmpty, reason: badText.join('\n'));
+      },
+    );
   }
 }

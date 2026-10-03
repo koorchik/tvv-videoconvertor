@@ -920,6 +920,24 @@ abstract class AppLocalizations {
   /// **'Same as the computer'**
   String get languageSystem;
 
+  /// No description provided for @lookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Look'**
+  String get lookTitle;
+
+  /// No description provided for @lookCozy.
+  ///
+  /// In en, this message translates to:
+  /// **'Cozy'**
+  String get lookCozy;
+
+  /// No description provided for @lookPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Professional'**
+  String get lookPro;
+
   /// No description provided for @techPictureCopied.
   ///
   /// In en, this message translates to:

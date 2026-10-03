@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../settings.dart';
+import 'button_menu.dart';
 
 /// Each language's own short name. "UK" would read as the United Kingdom.
 const _shortNames = {'en': 'EN', 'uk': 'УКР'};
@@ -17,34 +18,27 @@ class LanguageButton extends ConsumerWidget {
     final chosen = ref.watch(localeProvider)?.languageCode;
     final controller = ref.read(localeProvider.notifier);
 
-    return MenuAnchor(
-      builder: (context, menu, _) => TextButton.icon(
-        onPressed: () => menu.isOpen ? menu.close() : menu.open(),
+    // The Builder gives the menu the button's own place on screen.
+    return Builder(
+      builder: (context) => TextButton.icon(
+        onPressed: () => showMenuUnder(context, [
+          for (final entry in appLanguages.entries)
+            tickedMenuItem(
+              label: entry.value,
+              ticked: chosen == entry.key,
+              onTap: () => controller.select(entry.key),
+            ),
+          const PopupMenuDivider(height: 1),
+          tickedMenuItem(
+            label: l10n.languageSystem,
+            ticked: chosen == null,
+            onTap: () => controller.select(null),
+          ),
+        ]),
         icon: const Icon(Icons.translate_rounded, size: 18),
         // The language currently shown, in its own short form.
         label: Text(_shortNames[l10n.localeName] ?? l10n.localeName),
       ),
-      menuChildren: [
-        for (final entry in appLanguages.entries)
-          _choice(entry.value, chosen == entry.key, () {
-            controller.select(entry.key);
-          }),
-        const Divider(height: 1),
-        _choice(l10n.languageSystem, chosen == null, () {
-          controller.select(null);
-        }),
-      ],
     );
   }
-
-  Widget _choice(String label, bool selected, VoidCallback onPressed) =>
-      MenuItemButton(
-        onPressed: onPressed,
-        leadingIcon: Icon(
-          Icons.check_rounded,
-          size: 18,
-          color: selected ? null : Colors.transparent,
-        ),
-        child: Text(label),
-      );
 }

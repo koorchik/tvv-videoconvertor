@@ -147,6 +147,45 @@ videos and gets small files that look the same, with no help.
 - More is available on request only: "More options…", and "Show the command"
   and "Video details" in the ⋯ menus.
 
+## The two looks
+
+The app comes in two looks (`Look` in `theme.dart`), switched with the palette
+button beside the language button and remembered (`lookProvider` in
+`settings.dart`). The layout and every size are the same in both.
+
+- **Cozy**, the one the app starts with: light, warm, rounded and cheerful.
+  Bright cream surfaces over a soft peach-to-mint backdrop, cocoa text, an
+  orange accent, sentence-case headings, and a set of colours (`Hues`) so
+  that each goal, track type and icon has its own.
+- **Professional**: dark, flat and nearly square, the look of the camctrl app
+  (a sibling project). Near-black surfaces told apart by steps of grey and
+  1 px lines, one blue accent, pane titles and control labels in spaced
+  capitals, technical captions in the fixed-width font.
+
+How a widget stays right in both:
+
+- Colours come from `Theme.of(context).colorScheme`. Both schemes set by hand
+  every role the widgets read, so set a new role in both before reading it,
+  or it shows Flutter's default colour.
+- Everything else that differs (corner radii, border widths, capitals, the
+  caption font, a few colours with no scheme role) comes from
+  `AppLook.of(context)`. No widget names a palette or checks which look is on.
+- An icon or mark that should be colourful in Cozy reads `look.hues`, which
+  is null in Professional, and falls back to the quiet colour:
+  `look.hues?.amber.deep ?? scheme.onSurfaceVariant`. A `Hue` is a pair:
+  `deep` for the icon or small text (each passes as text on white), `soft`
+  for the fill behind it. Goals take theirs by position (`hues.at(index)`).
+- Pane titles and control labels go through `PaneTitle` and `ControlLabel`
+  (`home/headings.dart`), which make the capitals; the ARB strings stay in
+  ordinary case.
+- A change of size belongs in the shared `_theme()` builder, never in one
+  look: `no_scrolling_test.dart` checks the panel in each look, and
+  `flutter test --tags screenshots` writes every screen once per look
+  (`3_queue_cozy.png`, `3_queue_pro.png`).
+- In both looks the accent is for what is chosen, active or clickable; green
+  for done; the scheme's `tertiary` (teal in Cozy, amber in Professional) for
+  things worth noticing (a sample, HDR, personal data); red for failures.
+
 ## Adding a goal
 
 1. Write `lib/core/scenarios/<name>.dart` with a `Scenario` and its presets.
@@ -230,6 +269,12 @@ The UI renders presets and options generically; it needs no other change.
   developer's computer: run it again after the icon changes, and with
   `--remove` before changing the identifier. A window already open keeps the
   icon it opened with, so restart the app to see a change.
+- **Menus near the window's edge:** `MenuAnchor` opens a menu from its
+  button's left side, and one that would run past the window is moved back
+  only until it touches the edge, where its side and shadow are cut off. The
+  buttons in the panel's corner use `showMenuUnder`
+  (`home/widgets/button_menu.dart`) instead, which lines the menu up with the
+  button's right side. A test opens both at the smallest window.
 - **Resolve on Linux** (Blackmagic's codec list for 21.1): no AAC in either
   edition, no H.264/H.265 in the free edition. Details in the header of
   `resolve_linux.dart`.

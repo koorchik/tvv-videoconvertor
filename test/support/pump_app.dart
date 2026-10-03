@@ -14,6 +14,7 @@ import 'package:tvv_videoconvertor/app/providers.dart';
 import 'package:tvv_videoconvertor/app/settings.dart';
 import 'package:tvv_videoconvertor/core/settings/settings_store.dart';
 import 'package:tvv_videoconvertor/app/sources/sources_controller.dart';
+import 'package:tvv_videoconvertor/app/theme.dart';
 import 'package:tvv_videoconvertor/app/window.dart';
 
 import 'fakes.dart';
@@ -26,7 +27,7 @@ Future<SourcesController> pumpApp(
   FakeEnvironment env, {
   Locale? locale = const Locale('en'),
   SettingsStore? settings,
-  ThemeMode themeMode = ThemeMode.light,
+  Look? look,
   Size size = defaultWindowSize,
   Widget home = const HomeScreen(),
 }) async {
@@ -41,16 +42,15 @@ Future<SourcesController> pumpApp(
     ],
   );
   addTearDown(container.dispose);
+  // Chosen the way a user chooses it; null leaves the remembered look, or
+  // the one the app starts with.
+  if (look != null) await container.read(lookProvider.notifier).select(look);
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
       child: RepaintBoundary(
         key: _screenshotKey,
-        child: VideoConverterApp(
-          locale: locale,
-          themeMode: themeMode,
-          home: home,
-        ),
+        child: VideoConverterApp(locale: locale, home: home),
       ),
     ),
   );

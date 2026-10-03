@@ -223,6 +223,9 @@
     }
   },
   "languageSystem": "Same as the computer",
+  "lookTitle": "Look",
+  "lookCozy": "Cozy",
+  "lookPro": "Professional",
   "techPictureCopied": "picture copied as is",
   "techSoundCopied": "sound copied as is",
   "techNoSound": "no sound",

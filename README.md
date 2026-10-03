@@ -73,8 +73,10 @@ Also:
 - Originals are never modified or overwritten. Unfinished outputs are removed.
 - Plain words first, with the technical detail beside them in smaller type
   ("Smallest file" with "AV1" underneath).
-- English and Ukrainian, switchable in the app; light and dark following the
-  system. The language, last goal and output folder are remembered.
+- English and Ukrainian, switchable in the app.
+- Two looks, switchable in the app: a warm, light, rounded one and a dark,
+  flat, professional one.
+- The language, look, last goal and output folder are remembered.
 
 ## Status
 

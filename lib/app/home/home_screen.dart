@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../providers.dart';
 import '../queue/queue_controller.dart';
 import '../sources/sources_controller.dart';
+import '../theme.dart';
 import 'widgets/queue_pane.dart';
 import 'widgets/recipe_pane.dart';
 import 'widgets/videos_pane.dart';
@@ -22,22 +23,25 @@ class HomeScreen extends ConsumerWidget {
     final environment = ref.watch(environmentProvider);
 
     return Scaffold(
-      body: SafeArea(
-        child: environment.when(
-          loading: () => _Message(
-            icon: const CircularProgressIndicator(),
-            title: l10n.startingUp,
-          ),
-          error: (_, _) => _Message(
-            icon: Icon(
-              Icons.error_outline_rounded,
-              size: 56,
-              color: Theme.of(context).colorScheme.error,
+      body: DecoratedBox(
+        decoration: BoxDecoration(gradient: AppLook.of(context).backdrop),
+        child: SafeArea(
+          child: environment.when(
+            loading: () => _Message(
+              icon: const CircularProgressIndicator(),
+              title: l10n.startingUp,
             ),
-            title: l10n.engineMissingTitle,
-            body: l10n.engineMissingBody,
+            error: (_, _) => _Message(
+              icon: Icon(
+                Icons.error_outline_rounded,
+                size: 56,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: l10n.engineMissingTitle,
+              body: l10n.engineMissingBody,
+            ),
+            data: (_) => const _Workspace(),
           ),
-          data: (_) => const _Workspace(),
         ),
       ),
     );
@@ -85,7 +89,7 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: _dragging
-                  ? scheme.primaryContainer.withValues(alpha: 0.35)
+                  ? scheme.primaryContainer.withValues(alpha: 0.3)
                   : Colors.transparent,
               border: Border.all(
                 color: _dragging ? scheme.primary : Colors.transparent,

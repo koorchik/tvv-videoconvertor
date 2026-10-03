@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/ffmpeg/command_text.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../theme.dart';
 
 /// Shows the FFmpeg command for one video, for people who want to see exactly
 /// what happens, run it themselves or adjust it.
@@ -102,8 +103,11 @@ class _CommandDialogState extends State<CommandDialog> {
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                     decoration: BoxDecoration(
-                      color: scheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
+                      color: scheme.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(
+                        AppLook.of(context).panelRadius,
+                      ),
+                      border: Border.all(color: scheme.outlineVariant),
                     ),
                     child: SingleChildScrollView(
                       child: SingleChildScrollView(
@@ -120,7 +124,7 @@ class _CommandDialogState extends State<CommandDialog> {
                           child: SelectableText(
                             text,
                             style: const TextStyle(
-                              fontFamily: 'JetBrains Mono',
+                              fontFamily: monoFontFamily,
                               fontSize: 13,
                               height: 1.5,
                             ),

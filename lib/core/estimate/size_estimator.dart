@@ -7,6 +7,7 @@
 /// with the exact settings and the result is scaled up to the whole length.
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -133,7 +134,8 @@ abstract interface class OutputEstimator {
   /// Null when the estimate could not be made or was cancelled.
   Future<OutputEstimate?> estimate(MediaInfo info, ConversionPlan plan);
 
-  /// Stops every estimate in progress.
+  /// Stops every estimate in progress. Completes once they have ended: FFmpeg
+  /// has exited and nothing it wrote is left.
   Future<void> cancelAll();
 }
 
@@ -147,11 +149,24 @@ class SampleEstimator implements OutputEstimator {
   final FfmpegRunner _runner;
   final Directory _workDir;
   final _running = <FfmpegRun>{};
+
+  /// Estimates under way, so that [cancelAll] can wait for them to end.
+  final _measuring = <Future<OutputEstimate?>>{};
   var _generation = 0;
   var _counter = 0;
 
   @override
   Future<OutputEstimate?> estimate(MediaInfo info, ConversionPlan plan) async {
+    final measuring = _measure(info, plan);
+    _measuring.add(measuring);
+    try {
+      return await measuring;
+    } finally {
+      _measuring.remove(measuring);
+    }
+  }
+
+  Future<OutputEstimate?> _measure(MediaInfo info, ConversionPlan plan) async {
     final calculated = estimateWithoutEncoding(info, plan);
     if (calculated != null) return calculated;
     if (plan.video is! VideoEncode) return null;
@@ -179,6 +194,8 @@ class SampleEstimator implements OutputEstimator {
         ),
       );
       _running.add(run);
+      // Stopped while this sample was starting.
+      if (generation != _generation) unawaited(run.cancel());
       final result = await run.result;
       _running.remove(run);
       try {
@@ -205,6 +222,11 @@ class SampleEstimator implements OutputEstimator {
   @override
   Future<void> cancelAll() async {
     _generation++;
+    final measuring = _measuring.toList();
     await Future.wait([for (final run in _running.toList()) run.cancel()]);
+    // Each ends when its FFmpeg has exited and its sample is deleted.
+    await Future.wait([
+      for (final estimate in measuring) estimate.catchError((_) => null),
+    ]);
   }
 }

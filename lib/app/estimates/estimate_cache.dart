@@ -92,10 +92,11 @@ class EstimateCache extends Notifier<EstimateCacheState> {
     state = state.copyWith(estimates: {...state.estimates, key: estimate});
   }
 
-  /// Stops measuring, so converting gets the whole processor.
-  void stopMeasuring() {
+  /// Stops measuring, so converting gets the whole processor. Completes once
+  /// FFmpeg has exited.
+  Future<void> stopMeasuring() async {
     if (state.measuring.isEmpty) return;
     _generation++;
-    unawaited(_env.estimator.cancelAll());
+    await _env.estimator.cancelAll();
   }
 }

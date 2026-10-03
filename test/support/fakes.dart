@@ -58,6 +58,11 @@ class FakeHandle implements ConversionHandle {
   final _result = Completer<ConversionResult>();
   bool paused = false;
 
+  /// When set, cancelling only asks: the conversion stops when the test calls
+  /// [stop], as FFmpeg takes a moment to finish its file.
+  bool stopsLate = false;
+  bool cancelRequested = false;
+
   @override
   Stream<JobProgress> get progress => _progress.stream;
 
@@ -94,7 +99,13 @@ class FakeHandle implements ConversionHandle {
   );
 
   @override
-  Future<void> cancel() async => _complete(
+  Future<void> cancel() async {
+    cancelRequested = true;
+    if (!stopsLate) stop();
+  }
+
+  /// The cancelled conversion has ended.
+  void stop() => _complete(
     const ConversionResult(
       status: ConversionStatus.cancelled,
       elapsed: Duration.zero,

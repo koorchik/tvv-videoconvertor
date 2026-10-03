@@ -13,8 +13,10 @@
   queued with different settings, and output names carry the settings;
   samples are an option and report the whole video's expected size; expected
   size and time before starting; video details for originals and results;
-  keep-awake on Linux and macOS; "Show the command"; technical names beside
-  plain labels; English and Ukrainian with a switcher; light and dark.
+  keep-awake on Linux and macOS; closing the window asks first while
+  converting, and FFmpeg is stopped before the app goes; "Show the command";
+  technical names beside plain labels; English and Ukrainian with a
+  switcher; light and dark.
   Language, last goal and output folder are remembered.
 - **App icon** for the three platforms, drawn by `tool/make_icons.dart`.
 - **CI:** analysis, tests and release builds for Linux, Windows and macOS.

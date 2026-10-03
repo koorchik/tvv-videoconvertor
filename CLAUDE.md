@@ -191,7 +191,11 @@ The UI renders presets and options generically; it needs no other change.
 - **Tone mapping** needs the `zscale` and `tonemap` filters, which not every
   build has; `Capabilities.hasFilter` is checked first.
 - **Cancel:** `q` on stdin makes FFmpeg finish the file and exit with code 0,
-  so the runner tracks cancellation itself.
+  so the runner tracks cancellation itself. `cancel()` only asks: FFmpeg has
+  exited and the `.part` file is gone when the handle's `result` completes.
+  An app that leaves in between abandons a running FFmpeg and the unfinished
+  file, so closing the window goes through `QueueController.shutDown()` and
+  `EstimateCache.stopMeasuring()`, which wait.
 - **Expected size** of a quality-targeted encode cannot be calculated; the
   estimator encodes 3-second pieces spread over the video (picture only; the
   sound is calculated) and scales up. It is stopped when converting starts.
@@ -211,6 +215,12 @@ The UI renders presets and options generically; it needs no other change.
   font; it has no arrow glyphs, so JetBrains Mono is its fallback. JetBrains
   Mono is also the fixed-width font, because the generic `monospace` family
   does not resolve to one on every Linux desktop.
+- **Closing the window:** `window_manager` reports a close a second time,
+  for the close that `destroy()` itself causes. Answering that with another
+  `destroy()` reaches the plugin after the window is gone and crashes the app
+  on Linux (a segmentation fault that `flutter run` shows only as "Lost
+  connection to device"). `WindowCloseGuard` destroys once. The engine's
+  "The implicit view cannot be removed" line on every close is harmless.
 - **App icon:** the drawing in `tool/make_icons.dart` is the source; it
   writes the macOS, Windows and Linux files, so change the drawing and never
   the files. On Linux the runner sets the window icon, which only X11

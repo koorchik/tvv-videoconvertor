@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:tvv_videoconvertor/app/app.dart';
+import 'package:tvv_videoconvertor/app/home/home_screen.dart';
 import 'package:tvv_videoconvertor/app/home/technical_text.dart';
 import 'package:tvv_videoconvertor/app/providers.dart';
 import 'package:tvv_videoconvertor/app/settings.dart';
@@ -27,6 +28,7 @@ Future<SourcesController> pumpApp(
   SettingsStore? settings,
   ThemeMode themeMode = ThemeMode.light,
   Size size = defaultWindowSize,
+  Widget home = const HomeScreen(),
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -44,7 +46,11 @@ Future<SourcesController> pumpApp(
       container: container,
       child: RepaintBoundary(
         key: _screenshotKey,
-        child: VideoConverterApp(locale: locale, themeMode: themeMode),
+        child: VideoConverterApp(
+          locale: locale,
+          themeMode: themeMode,
+          home: home,
+        ),
       ),
     ),
   );

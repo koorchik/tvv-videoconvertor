@@ -549,6 +549,38 @@ void main() {
       expect(estimate.time, isNotNull);
       expect(Directory(media!.file('estimates')).listSync(), isEmpty);
     });
+
+    test(
+      'stopping a measurement waits for FFmpeg and leaves nothing',
+      () async {
+        if (unavailable()) return;
+        final source = await media!.clip(
+          'to_stop_measuring.mp4',
+          size: '1280x720',
+          seconds: 40,
+        );
+        final info = await ffprobe.probe(source);
+        // Software AV1 at this size takes long enough to be interrupted.
+        final plan = CompressPreset.av1.plan(info, {
+          'quality': 'maximum',
+        }, capabilities);
+        final workDir = Directory(media!.file('stopped_estimates'));
+        final estimator = SampleEstimator(
+          FfmpegRunner(media!.paths.ffmpeg),
+          workDir: workDir,
+        );
+
+        final estimate = estimator.estimate(info, plan);
+        // FFmpeg is writing its first sample.
+        while (!workDir.existsSync() || workDir.listSync().isEmpty) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        }
+        await estimator.cancelAll();
+
+        expect(workDir.listSync(), isEmpty);
+        expect(await estimate, isNull);
+      },
+    );
   });
 
   group('The queue, with real FFmpeg', () {
@@ -628,6 +660,39 @@ void main() {
         ).existsSync(),
         isTrue,
       );
+    });
+
+    test('shutting down while converting leaves no unfinished file', () async {
+      if (unavailable()) return;
+      final source = await media!.clip(
+        'to_shut_down.mp4',
+        seconds: 30,
+        size: '1280x720',
+      );
+      final container = await app();
+      await container.read(sourcesProvider.notifier).addPaths([source]);
+      // Software AV1 at this size takes long enough to be interrupted.
+      container.read(recipeProvider.notifier)
+        ..selectPreset(CompressPreset.av1.id)
+        ..setOption('quality', 'maximum');
+      container.read(queueProvider.notifier).addSelected();
+      final writing = Completer<void>();
+      final subscription = container.listen(queueProvider, (_, state) {
+        if (state.activeJob?.progress != null && !writing.isCompleted) {
+          writing.complete();
+        }
+      }, fireImmediately: true);
+      await writing.future.timeout(const Duration(minutes: 1));
+      subscription.close();
+      expect(leftovers(), isNotEmpty);
+
+      await container.read(queueProvider.notifier).shutDown();
+
+      // Nothing is left to do once this returns: the app may go.
+      expect(leftovers(), isEmpty);
+      final state = container.read(queueProvider);
+      expect(state.jobs.single.status, JobStatus.cancelled);
+      expect(state.busy, isFalse);
     });
 
     test('a frame of a video can be grabbed as a small picture', () async {

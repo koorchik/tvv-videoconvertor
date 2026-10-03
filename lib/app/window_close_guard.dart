@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../l10n/app_localizations.dart';
+import 'estimates/estimate_cache.dart';
 import 'queue/queue_controller.dart';
 
 /// Asks before closing the window while videos are being converted, so a
-/// stray click does not throw away an hour of work.
+/// stray click does not throw away an hour of work, and stops FFmpeg before
+/// the app goes.
 class WindowCloseGuard extends ConsumerStatefulWidget {
   const WindowCloseGuard({super.key, required this.child});
 
@@ -18,6 +20,14 @@ class WindowCloseGuard extends ConsumerStatefulWidget {
 
 class _WindowCloseGuardState extends ConsumerState<WindowCloseGuard>
     with WindowListener {
+  /// The question is on screen.
+  bool _asking = false;
+
+  /// Set once the app is on its way out. Destroying the window makes the
+  /// plugin report a second close, and destroying it again when it no longer
+  /// exists crashes the app on Linux.
+  bool _leaving = false;
+
   @override
   void initState() {
     super.initState();
@@ -33,10 +43,29 @@ class _WindowCloseGuardState extends ConsumerState<WindowCloseGuard>
 
   @override
   Future<void> onWindowClose() async {
-    if (!ref.exists(queueProvider) || !ref.read(queueProvider).busy) {
-      await windowManager.destroy();
-      return;
+    if (_asking || _leaving) return;
+    if (ref.exists(queueProvider) && ref.read(queueProvider).busy) {
+      _asking = true;
+      final quit = await _confirmQuit();
+      _asking = false;
+      if (!quit || !mounted) return;
     }
+    _leaving = true;
+    try {
+      // FFmpeg has to stop before the app goes: left alone it would carry on
+      // converting, and the unfinished file would stay behind.
+      if (ref.exists(queueProvider)) {
+        await ref.read(queueProvider.notifier).shutDown();
+      }
+      if (ref.exists(estimateCacheProvider)) {
+        await ref.read(estimateCacheProvider.notifier).stopMeasuring();
+      }
+    } finally {
+      await windowManager.destroy();
+    }
+  }
+
+  Future<bool> _confirmQuit() async {
     final l10n = AppLocalizations.of(context)!;
     final quit = await showDialog<bool>(
       context: context,
@@ -55,12 +84,7 @@ class _WindowCloseGuardState extends ConsumerState<WindowCloseGuard>
         ],
       ),
     );
-    if (quit != true) return;
-    // Stopping first lets FFmpeg exit and the unfinished file be removed.
-    final queue = ref.read(queueProvider.notifier);
-    if (!ref.read(queueProvider).paused) queue.togglePause();
-    await queue.cancelActive();
-    await windowManager.destroy();
+    return quit ?? false;
   }
 
   @override

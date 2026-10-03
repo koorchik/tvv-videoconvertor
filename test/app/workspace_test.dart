@@ -262,6 +262,21 @@ void main() {
       ]);
     });
 
+    test('shutting down cancels the running job and starts no other', () async {
+      await sources().addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+      queue().addSelected();
+      await settle();
+
+      await queue().shutDown();
+
+      expect(jobs().map((j) => j.status), [
+        JobStatus.cancelled,
+        JobStatus.waiting,
+      ]);
+      expect(env.executor.started, hasLength(1));
+      expect(queueState().busy, isFalse);
+    });
+
     test('waiting jobs can be removed and reordered', () async {
       await sources().addPaths([
         '/videos/a.mp4',

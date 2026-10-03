@@ -29,6 +29,10 @@ class QueueController extends Notifier<QueueState> {
   var _nextId = 0;
   ConversionHandle? _activeHandle;
 
+  /// The loop working through the queue, while there is one.
+  Future<void>? _loop;
+  var _shuttingDown = false;
+
   @override
   QueueState build() {
     _env = ref.watch(environmentProvider).requireValue;
@@ -148,13 +152,13 @@ class QueueController extends Notifier<QueueState> {
 
   void _ensureRunning() {
     if (state.busy || state.paused || state.waiting.isEmpty) return;
-    unawaited(_run());
+    _loop = _run();
   }
 
   Future<void> _run() async {
     state = state.copyWith(busy: true);
     // Measuring sizes competes with converting for the processor.
-    ref.read(estimateCacheProvider.notifier).stopMeasuring();
+    unawaited(ref.read(estimateCacheProvider.notifier).stopMeasuring());
     await _env.sleepInhibitor.acquire();
     try {
       while (ref.mounted && !state.paused) {
@@ -200,6 +204,8 @@ class QueueController extends Notifier<QueueState> {
         ),
       );
       _activeHandle = handle;
+      // Asked to shut down while this job was starting.
+      if (_shuttingDown) unawaited(handle.cancel());
       final updates = handle.progress.listen(
         (progress) => _update(job.id, (j) => j.copyWith(progress: progress)),
       );
@@ -268,6 +274,17 @@ class QueueController extends Notifier<QueueState> {
   Future<void> cancelActive() async {
     if (state.activeJob?.status == JobStatus.paused) _activeHandle?.resume();
     await _activeHandle?.cancel();
+  }
+
+  /// Stops for good, as when the app closes: nothing new starts and the job
+  /// under way is cancelled. Completes once FFmpeg has exited and the
+  /// unfinished file is removed. Leaving sooner would let FFmpeg carry on
+  /// alone and the unfinished file stay behind.
+  Future<void> shutDown() async {
+    _shuttingDown = true;
+    state = state.copyWith(paused: true);
+    await cancelActive();
+    await _loop;
   }
 
   /// Takes a job off the list, cancelling it first if it is under way.

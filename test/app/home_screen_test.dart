@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tvv_videoconvertor/app/app.dart';
+import 'package:tvv_videoconvertor/app/home/technical_text.dart';
 import 'package:tvv_videoconvertor/app/providers.dart';
+import 'package:tvv_videoconvertor/core/settings/settings_store.dart';
 
 import '../support/fake_media.dart';
 import '../support/fakes.dart';
@@ -70,6 +72,23 @@ void main() {
     expect(env.executor.started, hasLength(1));
     expect(find.text('Pause'), findsOneWidget);
     expect(find.text('Stop'), findsOneWidget);
+  });
+
+  testWidgets('the expected size is shown per video and for the batch', (
+    tester,
+  ) async {
+    final queue = await pumpApp(tester, env);
+    await addVideos(tester, queue, ['/videos/holiday.mp4']);
+    await tester.pump();
+
+    expect(
+      find.textContaining('Will be converted  → about 150 MB'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('750 MB → about 150 MB  ·  80% smaller  ·  takes about 1 min'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('each file says in plain words what will happen to it', (
@@ -158,7 +177,7 @@ void main() {
 
   for (final locale in const [Locale('en'), Locale('uk')]) {
     testWidgets(
-      'no technical terms on the main screen (${locale.languageCode})',
+      'technical terms appear only as secondary detail (${locale.languageCode})',
       (tester) async {
         final queue = await pumpApp(tester, env, locale: locale);
         await addVideos(tester, queue, [
@@ -166,11 +185,11 @@ void main() {
           '/videos/nikon.mov',
         ]);
 
-        final seen = <String>[...visibleTexts(tester)];
+        final seen = <String>[...plainTexts(tester)];
         // The second goal's texts count too.
         await tester.tap(find.byIcon(Icons.movie_edit));
         await tester.pump();
-        seen.addAll(visibleTexts(tester));
+        seen.addAll(plainTexts(tester));
 
         // File names are the user's own and may look like anything.
         seen.removeWhere(
@@ -221,6 +240,31 @@ void main() {
     },
   );
 
+  testWidgets('clicking a video lets it have a goal of its own', (
+    tester,
+  ) async {
+    final queue = await pumpApp(tester, env);
+    env.ffprobe.add('/videos/second.mp4');
+    await addVideos(tester, queue, [
+      '/videos/holiday.mp4',
+      '/videos/second.mp4',
+    ]);
+    expect(find.textContaining('Applies to all videos'), findsOneWidget);
+
+    await tester.tap(find.text('second.mp4'));
+    await tester.pump();
+    expect(find.text('What to do with the selected video?'), findsOneWidget);
+
+    await tester.tap(find.text('Send to a phone'));
+    await tester.pump();
+    await tester.tap(find.text('Back to all videos'));
+    await tester.pump();
+
+    expect(find.text('What do you want to do?'), findsOneWidget);
+    // Only the video with its own goal is labelled with it.
+    expect(find.text('Send to a phone'), findsNWidgets(2));
+  });
+
   group('for people who want more', () {
     testWidgets('each video can show its command, one line or explained', (
       tester,
@@ -270,5 +314,63 @@ void main() {
 
       expect(find.text('DNxHR'), findsOneWidget);
     });
+  });
+
+  group('details for those who want them', () {
+    testWidgets('the format is named beside each plain choice', (tester) async {
+      await pumpApp(tester, env);
+
+      expect(find.widgetWithText(TechnicalText, 'HEVC'), findsOneWidget);
+      expect(find.widgetWithText(TechnicalText, 'AV1'), findsOneWidget);
+      expect(find.widgetWithText(TechnicalText, 'CRF 20'), findsOneWidget);
+      expect(
+        find.widgetWithText(
+          TechnicalText,
+          'HEVC 10-bit, CRF 20 · sound copied as is · MP4',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('each video shows what format it is', (tester) async {
+      final queue = await pumpApp(tester, env);
+      await addVideos(tester, queue, ['/videos/nikon.mov']);
+
+      expect(find.widgetWithText(TechnicalText, 'H.265'), findsOneWidget);
+    });
+  });
+
+  testWidgets('the two buttons of the empty screen are the same height', (
+    tester,
+  ) async {
+    await pumpApp(tester, env);
+    double height(String label) => tester
+        .getSize(
+          find.ancestor(
+            of: find.text(label),
+            matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+          ),
+        )
+        .height;
+
+    expect(height('Add videos'), height('Add folder'));
+  });
+
+  testWidgets('the language can be switched and is remembered', (tester) async {
+    final settings = MemorySettingsStore();
+    await pumpApp(tester, env, locale: null, settings: settings);
+    expect(find.text('Start'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.translate_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Українська'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Почати'), findsOneWidget);
+
+    // Started again with the same settings.
+    await tester.pumpWidget(const SizedBox());
+    await pumpApp(tester, FakeEnvironment(), locale: null, settings: settings);
+    expect(find.text('Почати'), findsOneWidget);
   });
 }

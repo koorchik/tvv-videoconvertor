@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
+import 'package:tvv_videoconvertor/core/estimate/size_estimator.dart';
 import 'package:tvv_videoconvertor/core/ffmpeg/capabilities.dart';
 import 'package:tvv_videoconvertor/core/ffmpeg/command_builder.dart';
 import 'package:tvv_videoconvertor/core/ffmpeg/runner.dart';
@@ -511,6 +512,30 @@ void main() {
         await media!.videoFingerprint(output.path),
         await media!.videoFingerprint(source),
       );
+    });
+  });
+
+  group('Expected size', () {
+    test('measured samples predict the real size closely', () async {
+      if (unavailable()) return;
+      final source = await media!.clip(
+        'to_estimate.mp4',
+        size: '640x360',
+        seconds: 40,
+      );
+      final info = await ffprobe.probe(source);
+      final plan = CompressPreset.hevc.plan(info, const {}, capabilities);
+
+      final estimate = await SampleEstimator(
+        FfmpegRunner(media!.paths.ffmpeg),
+        workDir: Directory(media!.file('estimates')),
+      ).estimate(info, plan);
+      final actual = await convert(CompressPreset.hevc, source);
+
+      expect(estimate!.measured, isTrue);
+      expect(estimate.bytes, closeTo(actual.sizeBytes, actual.sizeBytes * 0.3));
+      expect(estimate.time, isNotNull);
+      expect(Directory(media!.file('estimates')).listSync(), isEmpty);
     });
   });
 

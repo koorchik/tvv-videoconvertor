@@ -51,7 +51,7 @@ class _CommandDialogState extends State<CommandDialog> {
     return AlertDialog(
       title: Text(l10n.commandTitle),
       content: SizedBox(
-        width: 760,
+        width: (MediaQuery.sizeOf(context).width - 120).clamp(320, 980),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,50 +63,73 @@ class _CommandDialogState extends State<CommandDialog> {
               ),
             ),
             const SizedBox(height: 16),
-            SegmentedButton<bool>(
-              showSelectedIcon: false,
-              segments: [
-                ButtonSegment(value: false, label: Text(l10n.commandOneLine)),
-                ButtonSegment(value: true, label: Text(l10n.commandExplained)),
+            Row(
+              children: [
+                SegmentedButton<bool>(
+                  showSelectedIcon: false,
+                  segments: [
+                    ButtonSegment(
+                      value: false,
+                      label: Text(l10n.commandOneLine),
+                    ),
+                    ButtonSegment(
+                      value: true,
+                      label: Text(l10n.commandExplained),
+                    ),
+                  ],
+                  selected: {_explained},
+                  onSelectionChanged: (value) => setState(() {
+                    _explained = value.first;
+                    _copied = false;
+                  }),
+                ),
+                const Spacer(),
+                FilledButton.tonalIcon(
+                  onPressed: () => _copy(text),
+                  icon: Icon(
+                    _copied ? Icons.check_rounded : Icons.copy_rounded,
+                    size: 18,
+                  ),
+                  label: Text(_copied ? l10n.copied : l10n.copy),
+                ),
               ],
-              selected: {_explained},
-              onSelectionChanged: (value) => setState(() {
-                _explained = value.first;
-                _copied = false;
-              }),
             ),
             const SizedBox(height: 12),
             Flexible(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: SingleChildScrollView(
-                  child: SingleChildScrollView(
-                    // The explained form is laid out in columns, so it
-                    // scrolls sideways instead of wrapping.
-                    scrollDirection: Axis.horizontal,
-                    physics: _explained
-                        ? null
-                        : const NeverScrollableScrollPhysics(),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: _explained ? double.infinity : 732,
-                      ),
-                      child: SelectableText(
-                        text,
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 13,
-                          height: 1.5,
+              child: Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: SingleChildScrollView(
+                      child: SingleChildScrollView(
+                        // The explained form is laid out in columns, so it
+                        // scrolls sideways instead of wrapping.
+                        scrollDirection: Axis.horizontal,
+                        physics: _explained
+                            ? null
+                            : const NeverScrollableScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: _explained ? double.infinity : 900,
+                          ),
+                          child: SelectableText(
+                            text,
+                            style: const TextStyle(
+                              fontFamily: 'JetBrains Mono',
+                              fontSize: 13,
+                              height: 1.5,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
           ],
@@ -116,11 +139,6 @@ class _CommandDialogState extends State<CommandDialog> {
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l10n.close),
-        ),
-        FilledButton.tonalIcon(
-          onPressed: () => _copy(text),
-          icon: Icon(_copied ? Icons.check_rounded : Icons.copy_rounded),
-          label: Text(_copied ? l10n.copied : l10n.copy),
         ),
       ],
     );

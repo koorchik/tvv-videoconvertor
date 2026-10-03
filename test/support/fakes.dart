@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:tvv_videoconvertor/app/providers.dart';
 import 'package:tvv_videoconvertor/core/estimate/progress_estimator.dart';
+import 'package:tvv_videoconvertor/core/estimate/size_estimator.dart';
 import 'package:tvv_videoconvertor/core/ffmpeg/capabilities.dart';
 import 'package:tvv_videoconvertor/core/media/ffprobe.dart';
 import 'package:tvv_videoconvertor/core/media/media_info.dart';
 import 'package:tvv_videoconvertor/core/platform/sleep_inhibitor.dart';
 import 'package:tvv_videoconvertor/core/queue/job_executor.dart';
+import 'package:tvv_videoconvertor/core/scenarios/scenario.dart';
 
 import 'fake_media.dart';
 
@@ -138,6 +140,57 @@ class FakeSleepInhibitor implements SleepInhibitor {
   Future<void> release() async => isActive = false;
 }
 
+/// Pretends to measure: every re-encode comes out at [ratio] of the source
+/// size and takes as long as the video lasts.
+class FakeEstimator implements OutputEstimator {
+  double ratio = 0.2;
+
+  /// When set, measuring fails.
+  bool fail = false;
+
+  /// When set, measurements wait until [release] or [cancelAll].
+  bool hold = false;
+
+  /// Files actually measured (not calculated), in order.
+  final measured = <String>[];
+  var cancels = 0;
+  var _generation = 0;
+  final _held = <Completer<void>>[];
+
+  void release() {
+    for (final waiting in _held) {
+      waiting.complete();
+    }
+    _held.clear();
+  }
+
+  @override
+  Future<OutputEstimate?> estimate(MediaInfo info, ConversionPlan plan) async {
+    final calculated = estimateWithoutEncoding(info, plan);
+    if (calculated != null) return calculated;
+    measured.add(info.path);
+    final generation = _generation;
+    if (hold) {
+      final waiting = Completer<void>();
+      _held.add(waiting);
+      await waiting.future;
+    }
+    if (fail || generation != _generation) return null;
+    return OutputEstimate(
+      bytes: (info.sizeBytes * ratio).round(),
+      time: info.duration,
+      measured: true,
+    );
+  }
+
+  @override
+  Future<void> cancelAll() async {
+    cancels++;
+    _generation++;
+    release();
+  }
+}
+
 /// A complete stand-in for the machine: no FFmpeg, no real files.
 class FakeEnvironment {
   FakeEnvironment({this.capabilities = softwareOnly});
@@ -146,12 +199,14 @@ class FakeEnvironment {
   final ffprobe = FakeFfprobe();
   final executor = FakeExecutor();
   final inhibitor = FakeSleepInhibitor();
+  final estimator = FakeEstimator();
 
   late final environment = AppEnvironment(
     ffprobe: ffprobe,
     executor: executor,
     capabilities: capabilities,
     sleepInhibitor: inhibitor,
+    estimator: estimator,
   );
 
   /// Overrides that make the app use this environment.

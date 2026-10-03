@@ -8,7 +8,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:tvv_videoconvertor/app/app.dart';
+import 'package:tvv_videoconvertor/app/home/technical_text.dart';
 import 'package:tvv_videoconvertor/app/providers.dart';
+import 'package:tvv_videoconvertor/app/settings.dart';
+import 'package:tvv_videoconvertor/core/settings/settings_store.dart';
 import 'package:tvv_videoconvertor/app/queue/queue_controller.dart';
 
 import 'fakes.dart';
@@ -19,7 +22,8 @@ const _screenshotKey = ValueKey('screenshot');
 Future<QueueController> pumpApp(
   WidgetTester tester,
   FakeEnvironment env, {
-  Locale locale = const Locale('en'),
+  Locale? locale = const Locale('en'),
+  SettingsStore? settings,
   ThemeMode themeMode = ThemeMode.light,
   Size size = const Size(1180, 800),
 }) async {
@@ -27,7 +31,12 @@ Future<QueueController> pumpApp(
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 
-  final container = ProviderContainer(overrides: env.overrides);
+  final container = ProviderContainer(
+    overrides: [
+      ...env.overrides,
+      if (settings != null) settingsStoreProvider.overrideWithValue(settings),
+    ],
+  );
   addTearDown(container.dispose);
   await tester.pumpWidget(
     UncontrolledProviderScope(
@@ -54,6 +63,24 @@ Future<void> addVideos(
   await tester.pump();
 }
 
+/// Text on screen in the main, plain-language style: everything except the
+/// small technical notes beside it.
+List<String> plainTexts(WidgetTester tester) {
+  final technical = tester
+      .widgetList<Text>(
+        find.descendant(
+          of: find.byType(TechnicalText),
+          matching: find.byType(Text),
+        ),
+      )
+      .toSet();
+  return [
+    for (final text in tester.widgetList<Text>(find.byType(Text)))
+      if (!technical.contains(text))
+        text.data ?? text.textSpan?.toPlainText() ?? '',
+  ];
+}
+
 /// Every piece of text currently on screen.
 List<String> visibleTexts(WidgetTester tester) => [
   for (final text in tester.widgetList<Text>(find.byType(Text)))
@@ -78,6 +105,13 @@ Future<void> loadRealFonts() async {
     roboto.addFont(read('Roboto-$weight.ttf'));
   }
   await roboto.load();
+  final mono = FontLoader('JetBrains Mono')
+    ..addFont(
+      File('assets/fonts/JetBrainsMono-Regular.ttf')
+          .readAsBytes()
+          .then(ByteData.sublistView),
+    );
+  await mono.load();
   final icons = FontLoader('MaterialIcons')
     ..addFont(read('MaterialIcons-Regular.otf'));
   await icons.load();

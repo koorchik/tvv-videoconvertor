@@ -35,14 +35,24 @@ Also:
 
 - The list stays editable while converting: add, remove, reorder, cancel one
   file or stop everything. Failed or cancelled files can be retried.
-- Progress, time left and expected size per file and for the whole batch.
+- **Expected size before starting:** for each video and the whole batch,
+  with the time it will take. Where the size depends on the footage, a few
+  short pieces are encoded in the background with the exact settings and
+  scaled up.
+- Progress, time left and expected size while converting.
+- **One goal for everything, or one per video:** a goal applies to all videos;
+  click a video to choose something different for it. The same file can be
+  added more than once to get it in several formats.
 - **Try a 10-second sample** before a long conversion, from the start or the
   middle, and get the expected size and time for the whole video.
 - The computer is kept awake while converting (Linux and macOS).
 - **Show the command:** every video can show the exact FFmpeg command, on one
   line or explained option by option, ready to paste into a terminal.
 - Originals are never modified or overwritten. Unfinished outputs are removed.
-- English and Ukrainian, light and dark, following the system.
+- Plain words first, with the technical detail beside them in smaller type
+  ("Smallest file" with "AV1" underneath).
+- English and Ukrainian, switchable in the app; light and dark following the
+  system. The language, last goal and output folder are remembered.
 
 ## Status
 
@@ -118,4 +128,5 @@ Adding a goal means one file in `lib/core/scenarios/`, one line in
 ## Licence
 
 Not chosen yet. FFmpeg is a separate program under its own licence (LGPL or
-GPL, depending on the build).
+GPL, depending on the build). The bundled JetBrains Mono font is under the SIL
+Open Font License (`assets/fonts/JetBrainsMono-OFL.txt`).

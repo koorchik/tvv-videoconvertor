@@ -1,4 +1,5 @@
 import '../../core/estimate/progress_estimator.dart';
+import '../../core/estimate/size_estimator.dart';
 import '../../core/media/media_info.dart';
 import '../../core/output/output_namer.dart';
 import '../../core/queue/job_executor.dart';
@@ -33,6 +34,11 @@ class QueueItem {
     this.plan,
     this.progress,
     this.result,
+    this.estimate,
+    this.estimating = false,
+    this.estimateFailed = false,
+    this.goal,
+    this.customGoal = false,
   });
 
   final int id;
@@ -44,6 +50,23 @@ class QueueItem {
   final ConversionPlan? plan;
   final JobProgress? progress;
   final ConversionResult? result;
+
+  /// Expected size (and time) of the output for the current plan.
+  final OutputEstimate? estimate;
+
+  /// Samples are being encoded to measure [estimate].
+  final bool estimating;
+
+  /// Measuring did not work for this file; it is not tried again until the
+  /// plan changes.
+  final bool estimateFailed;
+
+  /// What this file is to be converted to.
+  final TaskSelection? goal;
+
+  /// The goal was chosen for this file alone. Changing the shared goal then
+  /// leaves it alone.
+  final bool customGoal;
 
   bool get isActive =>
       status == ItemStatus.running || status == ItemStatus.paused;
@@ -64,14 +87,26 @@ class QueueItem {
     JobProgress? progress,
     ConversionResult? result,
     bool clearProgress = false,
+    OutputEstimate? estimate,
+    bool clearEstimate = false,
+    bool? estimating,
+    bool? estimateFailed,
+    TaskSelection? goal,
+    bool? customGoal,
+    int? id,
   }) => QueueItem(
-    id: id,
+    id: id ?? this.id,
     path: path,
     status: status ?? this.status,
     info: info ?? this.info,
     plan: plan ?? this.plan,
     progress: clearProgress ? null : progress ?? this.progress,
     result: clearProgress ? null : result ?? this.result,
+    estimate: clearEstimate ? null : estimate ?? this.estimate,
+    estimating: estimating ?? this.estimating,
+    estimateFailed: estimateFailed ?? this.estimateFailed,
+    goal: goal ?? this.goal,
+    customGoal: customGoal ?? this.customGoal,
   );
 }
 
@@ -81,6 +116,21 @@ class TaskSelection {
 
   final String presetId;
   final OptionValues values;
+
+  @override
+  bool operator ==(Object other) =>
+      other is TaskSelection &&
+      other.presetId == presetId &&
+      other.values.length == values.length &&
+      values.entries.every((e) => other.values[e.key] == e.value);
+
+  @override
+  int get hashCode => Object.hash(
+    presetId,
+    Object.hashAllUnordered(
+      values.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
+  );
 }
 
 /// The outcome of a "try a short sample" run.
@@ -113,6 +163,7 @@ class QueueState {
     this.output = const OutputSettings(),
     this.isRunning = false,
     this.sample,
+    this.selectedIds = const {},
   });
 
   final List<QueueItem> items;
@@ -122,6 +173,19 @@ class QueueState {
   /// The queue is being worked through.
   final bool isRunning;
   final SampleOutcome? sample;
+
+  /// Videos the user clicked. While any are selected, the goal panel changes
+  /// only them.
+  final Set<int> selectedIds;
+
+  /// The goal the panel shows and edits: the first selected video's, or the
+  /// shared one.
+  TaskSelection get editedGoal {
+    for (final item in items) {
+      if (selectedIds.contains(item.id)) return item.goal ?? selection;
+    }
+    return selection;
+  }
 
   QueueItem? get activeItem {
     for (final item in items) {
@@ -144,11 +208,13 @@ class QueueState {
     bool? isRunning,
     SampleOutcome? sample,
     bool clearSample = false,
+    Set<int>? selectedIds,
   }) => QueueState(
     items: items ?? this.items,
     selection: selection ?? this.selection,
     output: output ?? this.output,
     isRunning: isRunning ?? this.isRunning,
     sample: clearSample ? null : sample ?? this.sample,
+    selectedIds: selectedIds ?? this.selectedIds,
   );
 }

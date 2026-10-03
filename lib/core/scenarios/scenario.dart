@@ -258,4 +258,21 @@ class ConversionPlan {
   /// True when there is something to run.
   bool get producesOutput =>
       kind != PlanKind.skip && kind != PlanKind.unsupported;
+
+  /// The same plan with different sound handling.
+  ConversionPlan withAudio(AudioAction audio) => ConversionPlan(
+    kind: kind,
+    video: video,
+    audio: audio,
+    muxer: muxer,
+    extension: extension,
+    nameSuffix: nameSuffix,
+    outputArgs: outputArgs,
+    keepMetadata: keepMetadata,
+    keepFileDate: keepFileDate,
+    firstAudioOnly: firstAudioOnly,
+    notes: notes,
+    estimatedBytes: estimatedBytes,
+    cost: cost,
+  );
 }

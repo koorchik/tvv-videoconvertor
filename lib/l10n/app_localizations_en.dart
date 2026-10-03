@@ -542,4 +542,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statusCannotHold => 'This file type cannot hold this video';
+
+  @override
+  String get estimating => 'measuring size…';
+
+  @override
+  String takesAbout(String time) {
+    return 'takes about $time';
+  }
+
+  @override
+  String goalForSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'What to do with the $count selected videos?',
+      one: 'What to do with the selected video?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backToAll => 'Back to all videos';
+
+  @override
+  String get goalAppliesToAll =>
+      'Applies to all videos. Click a video to choose something different for it.';
+
+  @override
+  String get addAgain => 'Add again for another goal';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageSystem => 'Same as the computer';
+
+  @override
+  String get techPictureCopied => 'picture copied as is';
+
+  @override
+  String get techSoundCopied => 'sound copied as is';
+
+  @override
+  String get techNoSound => 'no sound';
+
+  @override
+  String get techNoReencode => 'no re-encoding';
+
+  @override
+  String techUpTo(String lines) {
+    return 'up to $lines';
+  }
 }

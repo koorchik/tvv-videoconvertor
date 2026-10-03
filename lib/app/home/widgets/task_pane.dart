@@ -1,6 +1,7 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' show toBeginningOfSentenceCase;
 import 'package:path/path.dart' as p;
 
 import '../../../core/output/output_namer.dart';
@@ -12,7 +13,10 @@ import '../../providers.dart';
 import '../../queue/queue_controller.dart';
 import '../../queue/queue_state.dart';
 import '../../theme.dart';
+import '../../../core/ffmpeg/capabilities.dart';
 import '../scenario_texts.dart';
+import '../technical_text.dart';
+import 'language_button.dart';
 
 /// The right-hand panel: what to do with the videos, where to save them, and
 /// the button that starts it. While converting it shows overall progress and
@@ -31,7 +35,8 @@ class TaskPane extends ConsumerWidget {
         .requireValue
         .capabilities;
 
-    final selected = findPreset(state.selection.presetId)!;
+    final goal = state.editedGoal;
+    final selected = findPreset(goal.presetId)!;
     final scenario = scenarios.firstWhere((s) => s.presets.contains(selected));
     final presets = scenario.presets
         .where((preset) => presetAvailable(preset, capabilities))
@@ -48,12 +53,43 @@ class TaskPane extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      l10n.goalTitle,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            state.selectedIds.isEmpty
+                                ? l10n.goalTitle
+                                : l10n.goalForSelected(
+                                    state.selectedIds.length,
+                                  ),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const LanguageButton(),
+                      ],
                     ),
+                    if (state.selectedIds.isNotEmpty)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton.icon(
+                          onPressed: controller.clearSelection,
+                          icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                          label: Text(l10n.backToAll),
+                        ),
+                      )
+                    else if (state.items.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          l10n.goalAppliesToAll,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 14),
                     _ScenarioGrid(
                       selected: scenario,
@@ -76,6 +112,12 @@ class TaskPane extends ConsumerWidget {
                               value: preset.id,
                               label: _SegmentLabel(
                                 presetTitle(l10n, preset.id),
+                                caption: presetCaption(
+                                  l10n,
+                                  preset,
+                                  goal.values,
+                                  capabilities,
+                                ),
                               ),
                             ),
                         ],
@@ -86,27 +128,43 @@ class TaskPane extends ConsumerWidget {
                       _Hint(presetHint(l10n, selected.id)),
                     ],
                     for (final option in selected.options)
-                      if (optionVisible(
-                        selected,
-                        option,
-                        state.selection.values,
-                      ))
+                      if (optionVisible(selected, option, goal.values))
                         _OptionControl(
                           preset: selected,
                           option: option,
-                          value: selected.choice(
-                            state.selection.values,
-                            option.id,
-                          ),
+                          values: goal.values,
+                          capabilities: capabilities,
+                          value: selected.choice(goal.values, option.id),
                           onChanged: (value) =>
                               controller.setOption(option.id, value),
                         ),
-                    if (selected.options.any(
-                      (o) => advancedOptionVisible(
-                        selected,
-                        o,
-                        state.selection.values,
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, left: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.tune_rounded,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: TechnicalText(
+                              technicalSummary(
+                                l10n,
+                                typicalPlan(
+                                  selected,
+                                  goal.values,
+                                  capabilities,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    if (selected.options.any(
+                      (o) => advancedOptionVisible(selected, o, goal.values),
                     ))
                       Theme(
                         // An expansion tile draws divider lines by default.
@@ -124,13 +182,15 @@ class TaskPane extends ConsumerWidget {
                               if (advancedOptionVisible(
                                 selected,
                                 option,
-                                state.selection.values,
+                                goal.values,
                               ))
                                 _OptionControl(
                                   preset: selected,
                                   option: option,
+                                  values: goal.values,
+                                  capabilities: capabilities,
                                   value: selected.choice(
-                                    state.selection.values,
+                                    goal.values,
                                     option.id,
                                   ),
                                   onChanged: (value) =>
@@ -277,12 +337,16 @@ class _OptionControl extends StatelessWidget {
   const _OptionControl({
     required this.preset,
     required this.option,
+    required this.values,
+    required this.capabilities,
     required this.value,
     required this.onChanged,
   });
 
   final Preset preset;
   final PresetOption option;
+  final OptionValues values;
+  final Capabilities capabilities;
   final String value;
   final ValueChanged<String> onChanged;
 
@@ -319,7 +383,17 @@ class _OptionControl extends StatelessWidget {
               for (final choice in option.choices)
                 ButtonSegment(
                   value: choice,
-                  label: _SegmentLabel(choiceLabel(l10n, preset.id, choice)),
+                  label: _SegmentLabel(
+                    choiceLabel(l10n, preset.id, choice),
+                    caption: choiceCaption(
+                      l10n,
+                      preset,
+                      option.id,
+                      choice,
+                      values,
+                      capabilities,
+                    ),
+                  ),
                 ),
             ],
             selected: {value},
@@ -411,17 +485,17 @@ class _StartControls extends ConsumerWidget {
     final controller = ref.read(queueControllerProvider.notifier);
     final pending = state.pending.toList();
     final sampleRunning = state.sample?.isRunning ?? false;
+    final sampleTarget =
+        pending.where((i) => state.selectedIds.contains(i.id)).firstOrNull ??
+        pending.firstOrNull;
 
     final done = state.items.where((i) => i.status == ItemStatus.done);
     final before = done.fold<int>(0, (s, i) => s + (i.info?.sizeBytes ?? 0));
     final after = done.fold<int>(0, (s, i) => s + (i.result?.outputBytes ?? 0));
     final finished = pending.isEmpty && done.isNotEmpty;
 
-    // A size can be promised up front only when every file's is known.
-    final estimates = pending.map((i) => i.plan?.estimatedBytes).toList();
-    final estimate = estimates.isNotEmpty && !estimates.contains(null)
-        ? estimates.fold<int>(0, (s, bytes) => s + bytes!)
-        : null;
+    final batch = batchEstimate(pending);
+    final measuring = pending.any((i) => i.estimating);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -437,14 +511,29 @@ class _StartControls extends ConsumerWidget {
         else if (state.items.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 10, left: 4),
-            child: Text(
-              [
-                l10n.toConvertCount(pending.length),
-                if (estimate != null) l10n.aboutSize(format.bytes(estimate)),
-              ].join('  ·  '),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.toConvertCount(pending.length),
+                  style: theme.textTheme.titleSmall,
+                ),
+                if (batch != null || measuring)
+                  Text(
+                    batch == null
+                        ? toBeginningOfSentenceCase(l10n.estimating)
+                        : [
+                            '${format.bytes(batch.before)} → '
+                                '${l10n.aboutSize(format.bytes(batch.after))}',
+                            format.sizeChange(batch.before, batch.after),
+                            if (batch.time != null)
+                              l10n.takesAbout(format.wait(batch.time!)),
+                          ].join('  ·  '),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
             ),
           ),
         FilledButton.icon(
@@ -482,14 +571,14 @@ class _StartControls extends ConsumerWidget {
               MenuItemButton(
                 onPressed: pending.isEmpty
                     ? null
-                    : () => controller.runSample(pending.first.id),
+                    : () => controller.runSample(sampleTarget!.id),
                 child: Text(l10n.sampleFromStart),
               ),
               MenuItemButton(
                 onPressed: pending.isEmpty
                     ? null
                     : () => controller.runSample(
-                        pending.first.id,
+                        sampleTarget!.id,
                         fromMiddle: true,
                       ),
                 child: Text(l10n.sampleFromMiddle),
@@ -644,13 +733,61 @@ class _Summary extends StatelessWidget {
 /// A segmented-button label that shrinks slightly rather than wrapping when
 /// a translation is longer than its segment.
 class _SegmentLabel extends StatelessWidget {
-  const _SegmentLabel(this.text);
+  const _SegmentLabel(this.text, {this.caption});
 
   final String text;
+
+  /// Technical name shown small under the label, e.g. "AV1".
+  final String? caption;
 
   @override
   Widget build(BuildContext context) => FittedBox(
     fit: BoxFit.scaleDown,
-    child: Text(text, maxLines: 1, softWrap: false),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(text, maxLines: 1, softWrap: false),
+          if (caption != null) TechnicalText(caption!),
+        ],
+      ),
+    ),
   );
+}
+
+/// Expected total size and time for the files about to be converted, or null
+/// while nothing has been measured yet.
+///
+/// Files not measured yet are assumed to shrink like the measured ones, in
+/// proportion to their size, and to take time in proportion to their length.
+({int before, int after, Duration? time})? batchEstimate(
+  List<QueueItem> pending,
+) {
+  final measured = pending.where((i) => i.estimate != null).toList();
+  if (measured.isEmpty) return null;
+  int size(QueueItem i) => i.info?.sizeBytes ?? 0;
+  int length(QueueItem i) => i.info?.duration.inMilliseconds ?? 0;
+
+  final before = pending.fold(0, (sum, i) => sum + size(i));
+  final measuredBefore = measured.fold(0, (sum, i) => sum + size(i));
+  final measuredAfter = measured.fold(0, (sum, i) => sum + i.estimate!.bytes);
+  final after = measuredBefore > 0
+      ? (measuredAfter * before / measuredBefore).round()
+      : measuredAfter;
+
+  // Only re-encodes take noticeable time; quick fixes take seconds.
+  final timed = measured.where((i) => i.estimate!.time != null).toList();
+  final encodes = pending.where((i) => i.plan?.kind == PlanKind.encode);
+  final timedLength = timed.fold(0, (sum, i) => sum + length(i));
+  final encodeLength = encodes.fold(0, (sum, i) => sum + length(i));
+  final timedSpent = timed.fold(
+    Duration.zero,
+    (sum, i) => sum + i.estimate!.time!,
+  );
+  final time = timedLength > 0
+      ? timedSpent * (encodeLength / timedLength)
+      : null;
+
+  return (before: before, after: after, time: time);
 }

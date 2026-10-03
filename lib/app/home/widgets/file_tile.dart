@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/platform/open_external.dart';
@@ -6,8 +7,11 @@ import '../../../core/scenarios/scenario.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../format.dart';
 import '../../queue/queue_controller.dart';
+import '../../../core/scenarios/registry.dart';
 import '../../queue/queue_state.dart';
 import '../../theme.dart';
+import '../scenario_texts.dart';
+import '../technical_text.dart';
 import 'command_dialog.dart';
 
 /// One video in the list: what it is, what will happen to it or how far along
@@ -31,130 +35,170 @@ class FileTile extends ConsumerWidget {
       SuccessColors.of(context),
     );
     final info = item.info;
+    final selected = ref.watch(
+      queueControllerProvider.select((s) => s.selectedIds.contains(item.id)),
+    );
+    final goal = item.goal;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: item.isActive ? scheme.primary : scheme.outlineVariant,
-          width: item.isActive ? 1.5 : 1,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: selected
+            ? scheme.primaryContainer.withValues(alpha: 0.5)
+            : scheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(
+            color: selected || item.isActive
+                ? scheme.primary
+                : scheme.outlineVariant,
+            width: selected ? 2 : (item.isActive ? 1.5 : 1),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          _LeadingIcon(status: item.status),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          // Clicking selects the video, so the goal panel applies to it
+          // alone. Ctrl (Cmd on macOS) adds to the selection.
+          onTap: () => controller.toggleSelected(
+            item.id,
+            additive:
+                HardwareKeyboard.instance.isControlPressed ||
+                HardwareKeyboard.instance.isMetaPressed,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+            child: Row(
               children: [
-                Text(
-                  format.fileName(item.path),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  [
-                    if (info != null) format.summary(info),
-                    if (statusText.isNotEmpty) statusText,
-                  ].join('  ·  '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: statusColor,
+                _LeadingIcon(status: item.status),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              format.fileName(item.path),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                          ),
+                          if (info?.video != null) ...[
+                            const SizedBox(width: 10),
+                            TechnicalText(sourceFormat(info!.video!)),
+                          ],
+                        ],
+                      ),
+                      if (item.customGoal && goal != null)
+                        _GoalLabel(goal: goal),
+                      const SizedBox(height: 2),
+                      Text(
+                        [
+                          if (info != null) format.summary(info),
+                          if (statusText.isNotEmpty) statusText,
+                        ].join('  ·  '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: statusColor,
+                        ),
+                      ),
+                      if (item.isActive) ...[
+                        const SizedBox(height: 10),
+                        LinearProgressIndicator(
+                          // Encoders report nothing for the first seconds; an
+                          // animated bar shows the app is working meanwhile.
+                          value: (item.progress?.fraction ?? 0) > 0
+                              ? item.progress!.fraction
+                              : null,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _progressLine(l10n, format),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                      for (final note in _notes(l10n))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            note,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                if (item.isActive) ...[
-                  const SizedBox(height: 10),
-                  LinearProgressIndicator(
-                    // Encoders report nothing for the first seconds; an
-                    // animated bar shows the app is working meanwhile.
-                    value: (item.progress?.fraction ?? 0) > 0
-                        ? item.progress!.fraction
-                        : null,
+                if (item.status == ItemStatus.failed)
+                  TextButton(
+                    onPressed: () => _showError(context, l10n),
+                    child: Text(l10n.details),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _progressLine(l10n, format),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                if (item.canRetry)
+                  IconButton(
+                    tooltip: l10n.retry,
+                    icon: const Icon(Icons.refresh_rounded),
+                    onPressed: () => controller.retry(item.id),
                   ),
-                ],
-                for (final note in _notes(l10n))
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      note,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                if (item.status == ItemStatus.done)
+                  IconButton(
+                    tooltip: l10n.showInFolder,
+                    icon: const Icon(Icons.folder_open_rounded),
+                    onPressed: () =>
+                        revealInFileManager(item.result!.outputPath!),
+                  ),
+                if (item.info != null && (item.plan?.producesOutput ?? false))
+                  PopupMenuButton<void>(
+                    tooltip: l10n.more,
+                    icon: const Icon(Icons.more_horiz_rounded),
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        onTap: () {
+                          final args = controller.commandFor(item);
+                          if (args == null) return;
+                          showDialog<void>(
+                            context: context,
+                            builder: (_) => CommandDialog(args: args),
+                          );
+                        },
+                        child: Text(l10n.showCommand),
+                      ),
+                      PopupMenuItem(
+                        onTap: () => controller.duplicate(item.id),
+                        child: Text(l10n.addAgain),
+                      ),
+                    ],
+                  ),
+                IconButton(
+                  tooltip: item.isActive ? l10n.cancel : l10n.remove,
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => item.isActive
+                      ? controller.cancelActive()
+                      : controller.remove(item.id),
+                ),
+                ReorderableDragStartListener(
+                  index: index,
+                  child: Tooltip(
+                    message: l10n.dragToReorder,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.drag_indicator_rounded,
+                        color: scheme.outline,
                       ),
                     ),
                   ),
-              ],
-            ),
-          ),
-          if (item.status == ItemStatus.failed)
-            TextButton(
-              onPressed: () => _showError(context, l10n),
-              child: Text(l10n.details),
-            ),
-          if (item.canRetry)
-            IconButton(
-              tooltip: l10n.retry,
-              icon: const Icon(Icons.refresh_rounded),
-              onPressed: () => controller.retry(item.id),
-            ),
-          if (item.status == ItemStatus.done)
-            IconButton(
-              tooltip: l10n.showInFolder,
-              icon: const Icon(Icons.folder_open_rounded),
-              onPressed: () => revealInFileManager(item.result!.outputPath!),
-            ),
-          if (item.info != null && (item.plan?.producesOutput ?? false))
-            PopupMenuButton<void>(
-              tooltip: l10n.more,
-              icon: const Icon(Icons.more_horiz_rounded),
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  onTap: () {
-                    final args = controller.commandFor(item);
-                    if (args == null) return;
-                    showDialog<void>(
-                      context: context,
-                      builder: (_) => CommandDialog(args: args),
-                    );
-                  },
-                  child: Text(l10n.showCommand),
                 ),
               ],
             ),
-          IconButton(
-            tooltip: item.isActive ? l10n.cancel : l10n.remove,
-            icon: const Icon(Icons.close_rounded),
-            onPressed: () => item.isActive
-                ? controller.cancelActive()
-                : controller.remove(item.id),
           ),
-          ReorderableDragStartListener(
-            index: index,
-            child: Tooltip(
-              message: l10n.dragToReorder,
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  Icons.drag_indicator_rounded,
-                  color: scheme.outline,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -194,8 +238,10 @@ class FileTile extends ConsumerWidget {
       case ItemStatus.waiting:
         return switch (item.plan?.kind) {
           PlanKind.skip => (l10n.statusReadyAsIs, success.text),
-          PlanKind.remux ||
-          PlanKind.audioOnly => (l10n.statusQuickFix, scheme.primary),
+          PlanKind.remux || PlanKind.audioOnly => (
+            [l10n.statusQuickFix, ?_expected(l10n)].join('  '),
+            scheme.primary,
+          ),
           PlanKind.unsupported => (
             switch (item.plan!.notes.firstOrNull) {
               PlanNote.noAudioStream => l10n.statusNoSound,
@@ -204,9 +250,21 @@ class FileTile extends ConsumerWidget {
             },
             scheme.error,
           ),
-          _ => (l10n.statusFullConversion, muted),
+          _ => (
+            [l10n.statusFullConversion, ?_expected(l10n)].join('  '),
+            muted,
+          ),
         };
     }
+  }
+
+  /// `→ about 210 MB`, or a note that it is being measured.
+  String? _expected(AppLocalizations l10n) {
+    final estimate = item.estimate;
+    if (estimate != null) {
+      return '→ ${l10n.aboutSize(Formatter(l10n).bytes(estimate.bytes))}';
+    }
+    return item.estimating ? '· ${l10n.estimating}' : null;
   }
 
   String _progressLine(AppLocalizations l10n, Formatter format) {
@@ -299,6 +357,47 @@ class _LeadingIcon extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(icon, color: foreground),
+    );
+  }
+}
+
+/// The goal of a video that was given one of its own, e.g.
+/// "Send to a phone" or "Make it small · Smallest file".
+class _GoalLabel extends StatelessWidget {
+  const _GoalLabel({required this.goal});
+
+  final TaskSelection goal;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final preset = findPreset(goal.presetId);
+    if (preset == null) return const SizedBox.shrink();
+    final scenario = scenarios.firstWhere((s) => s.presets.contains(preset));
+    final text = [
+      scenarioTitle(l10n, scenario.id),
+      if (scenario.presets.length > 1) presetTitle(l10n, preset.id),
+    ].join(' · ');
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Row(
+        children: [
+          Icon(scenarioIcon(scenario.id), size: 15, color: scheme.primary),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: scheme.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

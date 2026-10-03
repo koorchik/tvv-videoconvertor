@@ -184,5 +184,25 @@
   "noteHdrNotConverted": "This video uses extra-bright colours that may look washed out on a phone.",
   "noteAudioConvertedToFit": "The sound will be converted to fit this file type.",
   "statusNoSound": "No sound in this file",
-  "statusCannotHold": "This file type cannot hold this video"
+  "statusCannotHold": "This file type cannot hold this video",
+
+  "estimating": "measuring size…",
+  "takesAbout": "takes about {time}",
+  "@takesAbout": {"placeholders": {"time": {"type": "String"}}},
+
+  "goalForSelected": "{count, plural, =1{What to do with the selected video?} other{What to do with the {count} selected videos?}}",
+  "@goalForSelected": {"placeholders": {"count": {"type": "int"}}},
+  "backToAll": "Back to all videos",
+  "goalAppliesToAll": "Applies to all videos. Click a video to choose something different for it.",
+  "addAgain": "Add again for another goal",
+
+  "language": "Language",
+  "languageSystem": "Same as the computer",
+
+  "techPictureCopied": "picture copied as is",
+  "techSoundCopied": "sound copied as is",
+  "techNoSound": "no sound",
+  "techNoReencode": "no re-encoding",
+  "techUpTo": "up to {lines}",
+  "@techUpTo": {"placeholders": {"lines": {"type": "String"}}}
 }

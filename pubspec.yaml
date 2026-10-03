@@ -27,5 +27,12 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    # Fixed-width font for showing commands; generic "monospace" does not
+    # resolve to one on every Linux desktop. SIL Open Font License, see
+    # assets/fonts/JetBrainsMono-OFL.txt.
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
   # Generates lib/l10n/app_localizations*.dart from the ARB files (see l10n.yaml).
   generate: true

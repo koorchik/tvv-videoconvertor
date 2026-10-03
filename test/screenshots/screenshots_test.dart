@@ -112,4 +112,26 @@ void main() {
     await addVideos(tester, queue, files.take(2));
     await saveScreenshot(tester, '7_narrow');
   });
+
+  testWidgets('command, explained', (tester) async {
+    final queue = await pumpApp(tester, environment());
+    await addVideos(tester, queue, ['/videos/birthday final export.mov']);
+    await tester.tap(find.byTooltip('More'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Show the command'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Explained'));
+    await tester.pumpAndSettle();
+    await saveScreenshot(tester, '8_command');
+  });
+
+  testWidgets('own goal for one video', (tester) async {
+    final queue = await pumpApp(tester, environment());
+    await addVideos(tester, queue, files);
+    await tester.tap(find.text('DSC_0413.MOV'));
+    await tester.pump();
+    await tester.tap(find.text('Send to a phone'));
+    await tester.pump();
+    await saveScreenshot(tester, '9_own_goal');
+  });
 }

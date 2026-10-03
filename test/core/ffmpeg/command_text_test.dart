@@ -101,6 +101,24 @@ args=(
 ffmpeg "\${args[@]}"''');
     });
 
+    test('a long line gets its comment above, keeping the column', () {
+      const path = '/videos/Converted/a rather long name.mp4';
+      final text = explainedCommand(
+        'ffmpeg',
+        ['-crf', '20', path],
+        describe: describe,
+        shell: ShellStyle.posix,
+      );
+
+      expect(text, '''
+args=(
+  -crf 20  # quality
+  # output
+  '$path'
+)
+ffmpeg "\${args[@]}"''');
+    });
+
     test('PowerShell form quotes every element and splats the array', () {
       final text = explainedCommand(
         'ffmpeg',

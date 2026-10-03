@@ -4,6 +4,8 @@ import 'package:path/path.dart' as p;
 import 'package:tvv_videoconvertor/app/providers.dart';
 import 'package:tvv_videoconvertor/app/queue/queue_controller.dart';
 import 'package:tvv_videoconvertor/app/queue/queue_state.dart';
+import 'package:tvv_videoconvertor/app/settings.dart';
+import 'package:tvv_videoconvertor/core/settings/settings_store.dart';
 import 'package:tvv_videoconvertor/core/output/output_namer.dart';
 import 'package:tvv_videoconvertor/core/scenarios/scenario.dart';
 
@@ -52,12 +54,18 @@ void main() {
       expect(item('notes.txt').status, ItemStatus.unreadable);
     });
 
-    test('the same file is not listed twice', () async {
-      await queue.addPaths(['/videos/a.mp4']);
-      await queue.addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+    test(
+      'the same file can be added again, to convert it another way',
+      () async {
+        await queue.addPaths(['/videos/a.mp4']);
+        await queue.addPaths(['/videos/a.mp4']);
 
-      expect(state().items, hasLength(2));
-    });
+        expect(state().items.map((i) => i.path), [
+          '/videos/a.mp4',
+          '/videos/a.mp4',
+        ]);
+      },
+    );
   });
 
   group('choosing the goal', () {
@@ -371,6 +379,225 @@ void main() {
 
       expect(env.executor.last.job.outputPath, isNot(startsWith('/videos')));
       expect(env.executor.last.job.outputPath, endsWith('a_hevc_sample.mp4'));
+    });
+  });
+
+  group('expected size', () {
+    test('a re-encode is measured in the background', () async {
+      await queue.addPaths(['/videos/a.mp4']);
+      await settle();
+
+      expect(item('a.mp4').estimate!.bytes, 150000000);
+      expect(env.estimator.measured, ['/videos/a.mp4']);
+    });
+
+    test('a quick fix is calculated, not measured', () async {
+      await queue.addPaths(['/videos/a.mp4']);
+      await settle();
+
+      queue.selectPreset('resolve.studio');
+      await settle();
+
+      expect(item('a.mp4').estimate!.measured, isFalse);
+      expect(env.estimator.measured, hasLength(1));
+    });
+
+    test('going back to a goal reuses its measurement', () async {
+      await queue.addPaths(['/videos/a.mp4']);
+      await settle();
+
+      queue.selectPreset('resolve.studio');
+      queue.selectPreset('compress.hevc');
+      await settle();
+
+      expect(item('a.mp4').estimate!.bytes, 150000000);
+      expect(env.estimator.measured, hasLength(1));
+    });
+
+    test('measuring stops when converting starts', () async {
+      env.estimator.hold = true;
+      await queue.addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+      await settle();
+      expect(item('a.mp4').estimating, isTrue);
+
+      queue.start();
+      await settle();
+
+      expect(env.estimator.cancels, 1);
+      expect(state().items.where((i) => i.estimating), isEmpty);
+    });
+
+    test('a file that cannot be measured is not tried again', () async {
+      env.estimator.fail = true;
+      await queue.addPaths(['/videos/a.mp4']);
+      await settle();
+
+      expect(item('a.mp4').estimate, isNull);
+      expect(item('a.mp4').estimateFailed, isTrue);
+      expect(env.estimator.measured, hasLength(1));
+    });
+
+    test('a ten-second sample gives the file a better estimate', () async {
+      await queue.addPaths(['/videos/a.mp4']);
+      await settle();
+      final sample = queue.runSample(item('a.mp4').id);
+      await settle();
+
+      env.executor.last.finish(bytes: 4000000);
+      await sample;
+
+      expect(item('a.mp4').estimate!.bytes, 24000000);
+    });
+  });
+
+  group('a goal per video', () {
+    test(
+      'a selected video gets its own goal; the others keep theirs',
+      () async {
+        await queue.addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+
+        queue.toggleSelected(item('b.mp4').id);
+        queue.selectPreset('share.phone');
+
+        expect(item('a.mp4').plan!.nameSuffix, '_hevc');
+        expect(item('b.mp4').plan!.nameSuffix, '_phone');
+        expect(item('b.mp4').customGoal, isTrue);
+        expect(state().selection.presetId, 'compress.hevc');
+      },
+    );
+
+    test('the shared goal does not override a video given its own', () async {
+      await queue.addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+      queue.toggleSelected(item('b.mp4').id);
+      queue.selectPreset('share.phone');
+      queue.clearSelection();
+
+      queue.selectPreset('compress.av1');
+
+      expect(item('a.mp4').plan!.nameSuffix, '_av1');
+      expect(item('b.mp4').plan!.nameSuffix, '_phone');
+    });
+
+    test('the panel shows the goal of the selected video', () async {
+      await queue.addPaths(['/videos/a.mp4']);
+      queue.toggleSelected(item('a.mp4').id);
+      queue.selectPreset('compress.av1');
+      queue.setOption('quality', 'maximum');
+
+      expect(state().editedGoal.presetId, 'compress.av1');
+      expect(state().editedGoal.values, {'quality': 'maximum'});
+      queue.clearSelection();
+      expect(state().editedGoal.presetId, 'compress.hevc');
+    });
+
+    test('clicking the selected video again deselects it', () async {
+      await queue.addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+
+      queue.toggleSelected(item('a.mp4').id);
+      queue.toggleSelected(item('a.mp4').id);
+      expect(state().selectedIds, isEmpty);
+
+      queue.toggleSelected(item('a.mp4').id);
+      queue.toggleSelected(item('b.mp4').id, additive: true);
+      expect(state().selectedIds, hasLength(2));
+    });
+
+    test(
+      '"add again" puts a copy below and selects it for a new goal',
+      () async {
+        await queue.addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+
+        queue.duplicate(item('a.mp4').id);
+        queue.selectPreset('audio.extract');
+
+        final paths = state().items.map((i) => i.path).toList();
+        expect(paths, ['/videos/a.mp4', '/videos/a.mp4', '/videos/b.mp4']);
+        expect(state().items[0].plan!.nameSuffix, '_hevc');
+        expect(state().items[1].plan!.extension, 'm4a');
+      },
+    );
+
+    test('both entries of one file are converted, each its own way', () async {
+      await queue.addPaths(['/videos/a.mp4']);
+      queue.duplicate(item('a.mp4').id);
+      queue.selectPreset('share.phone');
+      final run = queue.start();
+      await settle();
+      env.executor.last.finish();
+      await settle();
+      env.executor.last.finish();
+      await run;
+
+      expect(env.executor.started.map((h) => h.job.outputPath), [
+        p.join('/videos', 'Converted', 'a_hevc.mp4'),
+        p.join('/videos', 'Converted', 'a_phone.mp4'),
+      ]);
+    });
+
+    test('a video leaves the selection when it starts converting', () async {
+      await queue.addPaths(['/videos/a.mp4']);
+      queue.toggleSelected(item('a.mp4').id);
+
+      queue.start();
+      await settle();
+
+      expect(state().selectedIds, isEmpty);
+    });
+  });
+
+  group('remembered between runs', () {
+    Future<QueueController> restart(MemorySettingsStore settings) async {
+      final next = ProviderContainer(
+        overrides: [
+          ...env.overrides,
+          settingsStoreProvider.overrideWithValue(settings),
+        ],
+      );
+      addTearDown(next.dispose);
+      await next.read(environmentProvider.future);
+      container = next;
+      return next.read(queueControllerProvider.notifier);
+    }
+
+    test('the last goal and its options are chosen again', () async {
+      final settings = MemorySettingsStore();
+      final first = await restart(settings);
+      first.selectPreset('resolve.free');
+      first.setOption('quality', 'best');
+
+      await restart(settings);
+
+      expect(state().selection.presetId, 'resolve.free');
+      expect(state().selection.values, {'quality': 'best'});
+    });
+
+    test('a goal given to one video only is not remembered', () async {
+      final settings = MemorySettingsStore();
+      final first = await restart(settings);
+      await first.addPaths(['/videos/a.mp4']);
+      first.toggleSelected(
+        container.read(queueControllerProvider).items.single.id,
+      );
+      first.selectPreset('share.phone');
+
+      await restart(settings);
+
+      expect(state().selection.presetId, 'compress.hevc');
+    });
+
+    test('the chosen output folder is used again', () async {
+      final settings = MemorySettingsStore();
+      final first = await restart(settings);
+      first.setOutput(
+        const OutputSettings(
+          mode: OutputMode.customFolder,
+          customDir: '/exports',
+        ),
+      );
+
+      await restart(settings);
+
+      expect(state().output.customDir, '/exports');
     });
   });
 }

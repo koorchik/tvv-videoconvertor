@@ -8,9 +8,12 @@
 - **Goals:** "Make it small" (HEVC, AV1, graphics card), "Edit in DaVinci
   Resolve" on Linux (Studio and free), "Send to a phone", "Get the sound",
   "Remove personal details" and "Change file type".
-- **UI:** one screen, live-editable queue, progress with time left and expected
-  size, 10-second sample, keep-awake on Linux and macOS, "Show the command",
-  "More options", English and Ukrainian, light and dark.
+- **UI:** one screen, live-editable queue, a goal per video or one for all,
+  expected size and time before starting (measured from samples), progress
+  with time left, 10-second sample, keep-awake on Linux and macOS, "Show the
+  command", "More options", technical names beside plain labels, English and
+  Ukrainian with a switcher, light and dark. Language, last goal and output
+  folder are remembered.
 - **CI:** analysis, tests and release builds for Linux, Windows and macOS.
 
 ## Next
@@ -30,10 +33,9 @@
    Run several conversions at once according to CPU, memory and graphics-card
    capacity; lower process priority so the desktop stays responsive; consider
    splitting a single long video into chunks encoded in parallel.
-5. **Estimates before starting.** Learn the typical compression per goal from
-   past conversions; check free disk space.
-6. **Comfort.** Settings (language, speed, output naming), remembering the
-   last-used goal, finish notification, taskbar progress.
+5. **Disk space.** Warn before starting when the expected output does not fit.
+6. **Comfort.** Settings (speed, output naming), finish notification,
+   taskbar progress.
 7. **Ship.**
    - Bundle a pinned FFmpeg per platform, with licence notices and source.
    - Windows: keep-awake, pause, and ending FFmpeg when the app ends.

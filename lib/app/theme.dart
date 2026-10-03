@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 const _seed = Color(0xFF4F46E5);
 
+/// Filled, tonal and outlined buttons share one height, so buttons placed
+/// side by side line up.
+const buttonHeight = 52.0;
+
 /// Colours for "this went well": finished files, files that need no work.
 /// Material's colour scheme has no success role, so the app adds one.
 class SuccessColors extends ThemeExtension<SuccessColors> {
@@ -80,14 +84,14 @@ ThemeData buildTheme(Brightness brightness) {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        minimumSize: const Size(0, 56),
+        minimumSize: const Size(0, buttonHeight),
         shape: rounded,
         textStyle: buttonText,
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size(0, 48),
+        minimumSize: const Size(0, buttonHeight),
         shape: rounded,
         textStyle: buttonText.copyWith(fontSize: 15),
       ),

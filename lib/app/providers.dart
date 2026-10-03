@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/estimate/size_estimator.dart';
 import '../core/ffmpeg/capabilities.dart';
 import '../core/ffmpeg/locator.dart';
 import '../core/ffmpeg/runner.dart';
@@ -15,12 +16,16 @@ class AppEnvironment {
     required this.executor,
     required this.capabilities,
     required this.sleepInhibitor,
+    required this.estimator,
   });
 
   final Ffprobe ffprobe;
   final JobExecutor executor;
   final Capabilities capabilities;
   final SleepInhibitor sleepInhibitor;
+
+  /// Predicts output sizes before anything is converted.
+  final OutputEstimator estimator;
 }
 
 /// Thrown at startup when no usable FFmpeg can be found.
@@ -37,6 +42,7 @@ final environmentProvider = FutureProvider<AppEnvironment>(
       executor: JobExecutor(FfmpegRunner(paths.ffmpeg)),
       capabilities: await CapabilityProbe(paths.ffmpeg).detect(),
       sleepInhibitor: SleepInhibitor.forPlatform(),
+      estimator: SampleEstimator(FfmpegRunner(paths.ffmpeg)),
     );
   },
   // A missing FFmpeg does not appear by waiting; show the message at once.

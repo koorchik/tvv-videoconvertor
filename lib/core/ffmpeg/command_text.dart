@@ -196,8 +196,9 @@ String explainedCommand(
         comment: describe(part),
       ),
   ];
-  // Comments line up, except after lines too long to be worth padding to.
-  const widest = 44;
+  // Comments line up in one column. A line too long for that column (a long
+  // path, encoder parameters) gets its comment on the line above instead.
+  const widest = 36;
   final column = lines
       .map((l) => l.code.length)
       .where((length) => length <= widest)
@@ -206,12 +207,16 @@ String explainedCommand(
   final buffer = StringBuffer()
     ..writeln(style == ShellStyle.powershell ? r'$ffmpegArgs = @(' : 'args=(');
   for (final line in lines) {
-    buffer.write('  ${line.code}');
-    if (line.comment.isNotEmpty) {
-      buffer.write('${' ' * (column - line.code.length).clamp(0, column)}  ');
-      buffer.write('# ${line.comment}');
+    final comment = line.comment.isEmpty ? '' : '# ${line.comment}';
+    if (comment.isNotEmpty && line.code.length > widest) {
+      buffer
+        ..writeln('  $comment')
+        ..writeln('  ${line.code}');
+    } else if (comment.isNotEmpty) {
+      buffer.writeln('  ${line.code.padRight(column)}  $comment');
+    } else {
+      buffer.writeln('  ${line.code}');
     }
-    buffer.writeln();
   }
   buffer
     ..writeln(')')

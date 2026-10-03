@@ -544,4 +544,56 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get statusCannotHold => 'Цей тип файлу не може містити таке відео';
+
+  @override
+  String get estimating => 'оцінюємо розмір…';
+
+  @override
+  String takesAbout(String time) {
+    return 'триватиме приблизно $time';
+  }
+
+  @override
+  String goalForSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Що зробити з вибраними відео ($count)?',
+      one: 'Що зробити з вибраним відео?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backToAll => 'Назад до всіх відео';
+
+  @override
+  String get goalAppliesToAll =>
+      'Застосовується до всіх відео. Клацніть відео, щоб вибрати для нього щось інше.';
+
+  @override
+  String get addAgain => 'Додати ще раз для іншої дії';
+
+  @override
+  String get language => 'Мова';
+
+  @override
+  String get languageSystem => 'Як на комп’ютері';
+
+  @override
+  String get techPictureCopied => 'зображення без змін';
+
+  @override
+  String get techSoundCopied => 'звук без змін';
+
+  @override
+  String get techNoSound => 'без звуку';
+
+  @override
+  String get techNoReencode => 'без перекодування';
+
+  @override
+  String techUpTo(String lines) {
+    return 'до $lines';
+  }
 }

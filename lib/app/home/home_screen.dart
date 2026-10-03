@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/platform/open_external.dart';
@@ -58,6 +59,17 @@ class _Workspace extends ConsumerWidget {
       }
     });
 
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): ref
+            .read(queueControllerProvider.notifier)
+            .clearSelection,
+      },
+      child: Focus(autofocus: true, child: _layout()),
+    );
+  }
+
+  Widget _layout() {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= HomeScreen._wideLayout;

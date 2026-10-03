@@ -170,5 +170,22 @@
   "noteHdrNotConverted": "У цьому відео надяскраві кольори, які на телефоні можуть виглядати блідо.",
   "noteAudioConvertedToFit": "Звук буде перетворено, щоб він підходив до цього типу файлу.",
   "statusNoSound": "У цьому файлі немає звуку",
-  "statusCannotHold": "Цей тип файлу не може містити таке відео"
+  "statusCannotHold": "Цей тип файлу не може містити таке відео",
+
+  "estimating": "оцінюємо розмір…",
+  "takesAbout": "триватиме приблизно {time}",
+
+  "goalForSelected": "{count, plural, =1{Що зробити з вибраним відео?} other{Що зробити з вибраними відео ({count})?}}",
+  "backToAll": "Назад до всіх відео",
+  "goalAppliesToAll": "Застосовується до всіх відео. Клацніть відео, щоб вибрати для нього щось інше.",
+  "addAgain": "Додати ще раз для іншої дії",
+
+  "language": "Мова",
+  "languageSystem": "Як на комп’ютері",
+
+  "techPictureCopied": "зображення без змін",
+  "techSoundCopied": "звук без змін",
+  "techNoSound": "без звуку",
+  "techNoReencode": "без перекодування",
+  "techUpTo": "до {lines}"
 }

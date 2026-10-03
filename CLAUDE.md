@@ -10,13 +10,16 @@ it does not link FFmpeg libraries. Roadmap and what is not built yet:
 The test of every UI decision: a non-technical person drops in large camera
 videos and gets small files that look the same, with no help. So:
 
-- The main screen shows no technical terms (codec names, bitrates, CRF).
-  `test/app/home_screen_test.dart` enforces this with a list of banned words,
-  in both languages.
+- Plain words lead; technical names follow in smaller type ("Smallest file",
+  "AV1" underneath). Technical terms on the main screen go only through the
+  `TechnicalText` widget (`home/technical_text.dart`);
+  `test/app/home_screen_test.dart` checks every other text against a list of
+  terms, in both languages.
 - Everything has a safe default. "Make it small" with "Works everywhere" is
   pre-selected: drop, Start, done.
-- Detail is available on request, never by default: "More options", and
-  "Show the command" on each video.
+- More is available on request: "More options", "Show the command" on each
+  video, and a goal per video (click a video; with none selected the goal
+  applies to all videos that have no goal of their own).
 
 ## Commands
 
@@ -47,7 +50,8 @@ After a UI change, run the screenshots and look at the PNGs. Multiple
   - `queue/job_executor.dart`: one conversion from plan to finished file.
   - `estimate/`, `output/`, `platform/`.
 - `lib/app/`: the UI. `queue/queue_controller.dart` is the Riverpod notifier
-  holding the list and running it; `home/` is the single screen;
+  holding the list, measuring expected sizes and running it; `settings.dart`
+  holds remembered choices (language, goal, folder); `home/` is the single screen;
   `home/scenario_texts.dart` maps scenario, preset and option ids to texts.
 - `lib/l10n/`: `app_en.arb` (template) and `app_uk.arb`. The generated
   `app_localizations*.dart` files are committed.
@@ -110,6 +114,12 @@ The UI renders presets and options generically; it needs no other change.
   clock; go through `addVideos()` in `pump_app.dart` (it uses
   `tester.runAsync`). Awaiting `StreamSubscription.cancel()` also escapes the
   fake clock; the controller does not await it.
+- **Fonts:** the generic `monospace` family does not resolve to a
+  fixed-width font on every Linux desktop, so JetBrains Mono is bundled for
+  the command view.
+- **Expected size** of a quality-targeted encode cannot be calculated; the
+  estimator encodes 3-second pieces spread over the video (picture only; the
+  sound is calculated) and scales up. It is stopped when converting starts.
 - **Resolve on Linux** (Blackmagic's codec list for 21.1): no AAC in either
   edition, no H.264/H.265 in the free edition. Details in the header of
   `resolve_linux.dart`.

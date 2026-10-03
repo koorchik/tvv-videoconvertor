@@ -1033,6 +1033,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This file type cannot hold this video'**
   String get statusCannotHold;
+
+  /// No description provided for @estimating.
+  ///
+  /// In en, this message translates to:
+  /// **'measuring size…'**
+  String get estimating;
+
+  /// No description provided for @takesAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'takes about {time}'**
+  String takesAbout(String time);
+
+  /// No description provided for @goalForSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{What to do with the selected video?} other{What to do with the {count} selected videos?}}'**
+  String goalForSelected(int count);
+
+  /// No description provided for @backToAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to all videos'**
+  String get backToAll;
+
+  /// No description provided for @goalAppliesToAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to all videos. Click a video to choose something different for it.'**
+  String get goalAppliesToAll;
+
+  /// No description provided for @addAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Add again for another goal'**
+  String get addAgain;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as the computer'**
+  String get languageSystem;
+
+  /// No description provided for @techPictureCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'picture copied as is'**
+  String get techPictureCopied;
+
+  /// No description provided for @techSoundCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'sound copied as is'**
+  String get techSoundCopied;
+
+  /// No description provided for @techNoSound.
+  ///
+  /// In en, this message translates to:
+  /// **'no sound'**
+  String get techNoSound;
+
+  /// No description provided for @techNoReencode.
+  ///
+  /// In en, this message translates to:
+  /// **'no re-encoding'**
+  String get techNoReencode;
+
+  /// No description provided for @techUpTo.
+  ///
+  /// In en, this message translates to:
+  /// **'up to {lines}'**
+  String techUpTo(String lines);
 }
 
 class _AppLocalizationsDelegate

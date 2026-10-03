@@ -16,6 +16,7 @@
   keep-awake on Linux and macOS; "Show the command"; technical names beside
   plain labels; English and Ukrainian with a switcher; light and dark.
   Language, last goal and output folder are remembered.
+- **App icon** for the three platforms, drawn by `tool/make_icons.dart`.
 - **CI:** analysis, tests and release builds for Linux, Windows and macOS.
 
 ## Next
@@ -43,6 +44,9 @@
    - Windows: keep-awake, pause, and ending FFmpeg when the app ends.
    - Installers (AppImage/deb, Windows installer, dmg) and release notes with
      the first-run security prompts explained.
+   - Linux: a desktop entry named after the application identifier, with the
+     icons installed beside it. Wayland desktops take the window icon from
+     there; until then `tool/desktop_entry.dart` registers one by hand.
    - Make the conversion tests pass on Windows and macOS and turn them into a
      required check.
 

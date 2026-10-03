@@ -29,6 +29,8 @@ flutter test test/app/workspace_test.dart --plain-name "pause holds the queue"
 flutter analyze
 dart format lib test tool                             # CI fails on unformatted code
 flutter gen-l10n                                      # after editing lib/l10n/*.arb
+flutter test tool/make_icons.dart                     # redraws the app icon files
+dart run tool/desktop_entry.dart                      # Linux: registers the icon with the desktop
 
 dart run tool/convert.dart --list                     # the engine without the UI
 dart run tool/convert.dart compress.hevc clip.mov --dry-run
@@ -209,6 +211,15 @@ The UI renders presets and options generically; it needs no other change.
   font; it has no arrow glyphs, so JetBrains Mono is its fallback. JetBrains
   Mono is also the fixed-width font, because the generic `monospace` family
   does not resolve to one on every Linux desktop.
+- **App icon:** the drawing in `tool/make_icons.dart` is the source; it
+  writes the macOS, Windows and Linux files, so change the drawing and never
+  the files. On Linux the runner sets the window icon, which only X11
+  desktops show. Wayland desktops take it from a desktop entry named after
+  the application identifier and show a generic icon without one. There is
+  no installer yet, so `tool/desktop_entry.dart` registers the entry on a
+  developer's computer: run it again after the icon changes, and with
+  `--remove` before changing the identifier. A window already open keeps the
+  icon it opened with, so restart the app to see a change.
 - **Resolve on Linux** (Blackmagic's codec list for 21.1): no AAC in either
   edition, no H.264/H.265 in the free edition. Details in the header of
   `resolve_linux.dart`.

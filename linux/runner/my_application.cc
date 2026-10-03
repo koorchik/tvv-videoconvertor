@@ -14,6 +14,30 @@ struct _MyApplication {
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
+// Gives the window its icon, in every size the bundle carries. This is what
+// X11 desktops show. Wayland desktops ignore it and take the icon from the
+// application's desktop entry (see tool/desktop_entry.dart).
+static void set_window_icons(GtkWindow* window) {
+  g_autofree gchar* executable = g_file_read_link("/proc/self/exe", nullptr);
+  if (executable == nullptr) {
+    return;
+  }
+  g_autofree gchar* bundle = g_path_get_dirname(executable);
+  static const int sizes[] = {16, 32, 48, 64, 128, 256};
+  GList* icons = nullptr;
+  for (int size : sizes) {
+    g_autofree gchar* name = g_strdup_printf("app_icon_%d.png", size);
+    g_autofree gchar* path =
+        g_build_filename(bundle, "data", "icons", name, nullptr);
+    GdkPixbuf* icon = gdk_pixbuf_new_from_file(path, nullptr);
+    if (icon != nullptr) {
+      icons = g_list_append(icons, icon);
+    }
+  }
+  gtk_window_set_icon_list(window, icons);
+  g_list_free_full(icons, g_object_unref);
+}
+
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
   gtk_widget_show(gtk_widget_get_toplevel(GTK_WIDGET(view)));
@@ -53,6 +77,7 @@ static void my_application_activate(GApplication* application) {
   }
 
   gtk_window_set_default_size(window, 1280, 720);
+  set_window_icons(window);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(

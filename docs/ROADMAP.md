@@ -7,7 +7,7 @@
   (encoders, working hardware encoders, accepted SVT-AV1 parameters).
 - **Goals:** "Make it small" (HEVC, AV1, graphics card), "Edit in DaVinci
   Resolve" on Linux (Studio and free), "Send to a phone", "Get the sound",
-  "Remove personal details" and "Change file type".
+  "Remove personal data" and "Change file type".
 - **UI:** videos, settings and queue as separate parts; the queue starts by
   itself and can be paused, reordered and edited; the same video can be
   queued with different settings, and output names carry the settings;
@@ -21,7 +21,7 @@
 ## Next
 
 1. **Finish the newer goals**
-   - Remove personal details: show a report of what was removed, and offer
+   - Remove personal data: show a report of what was removed, and offer
      neutral file names (a name can give away a place or a date).
    - Send to a phone: "fit into N MB" for services with a size limit.
    - Get the sound: choose which track, or all of them.

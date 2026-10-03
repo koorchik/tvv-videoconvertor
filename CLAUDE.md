@@ -17,6 +17,13 @@ videos and gets small files that look the same, with no help. So:
   terms, in both languages.
 - Everything has a safe default. "Make it small" with "Works everywhere" is
   pre-selected: drop, Start, done.
+- **Nothing to scroll in the "What to do" panel.** It shows every control at
+  the smallest window size (`lib/app/window.dart`), in every goal, option and
+  language; `test/app/no_scrolling_test.dart` checks all combinations at three
+  window heights. So a new control must take one row: label beside the
+  control, and anything bigger opens in a small window ("More options…").
+  If the test fails after a change, make the change fit; do not raise the
+  minimum window size without a reason.
 - More is available on request: "More options", "Show the command" and
   "Video details" in the ⋯ menus.
 
@@ -131,11 +138,15 @@ The UI renders presets and options generically; it needs no other change.
   `tester.runAsync`). Awaiting `StreamSubscription.cancel()` also escapes the
   fake clock; the controller does not await it. `pumpAndSettle` never
   returns while a job runs (its progress bar animates); pump fixed times.
-- **Fonts:** the generic `monospace` family does not resolve to a
-  fixed-width font on every Linux desktop, so JetBrains Mono is bundled for
-  the command view.
+- **Fonts:** both fonts are bundled so text takes the same room on every
+  computer (the no-scrolling layout depends on it). Roboto is the interface
+  font; it has no arrow glyphs, so JetBrains Mono is its fallback. JetBrains
+  Mono is also the fixed-width font, because the generic `monospace` family
+  does not resolve to one on every Linux desktop.
 - **MP4 drops unknown tags** such as `make` when writing; MOV keeps them.
   Matters for test fixtures with planted metadata.
+- **Byte counts overflow when multiplied.** Tens of gigabytes times
+  gigabytes exceeds 64-bit integers; take the ratio first.
 - **Expected size** of a quality-targeted encode cannot be calculated; the
   estimator encodes 3-second pieces spread over the video (picture only; the
   sound is calculated) and scales up. It is stopped when converting starts.

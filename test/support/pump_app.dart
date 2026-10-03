@@ -13,6 +13,7 @@ import 'package:tvv_videoconvertor/app/providers.dart';
 import 'package:tvv_videoconvertor/app/settings.dart';
 import 'package:tvv_videoconvertor/core/settings/settings_store.dart';
 import 'package:tvv_videoconvertor/app/sources/sources_controller.dart';
+import 'package:tvv_videoconvertor/app/window.dart';
 
 import 'fakes.dart';
 
@@ -25,7 +26,7 @@ Future<SourcesController> pumpApp(
   Locale? locale = const Locale('en'),
   SettingsStore? settings,
   ThemeMode themeMode = ThemeMode.light,
-  Size size = const Size(1180, 800),
+  Size size = defaultWindowSize,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -87,33 +88,33 @@ List<String> visibleTexts(WidgetTester tester) => [
     text.data ?? text.textSpan?.toPlainText() ?? '',
 ];
 
-/// Loads the real Roboto and icon fonts, so rendered images show readable
-/// text instead of the test framework's placeholder boxes.
+/// Loads the fonts the app ships, so text takes the room it really takes and
+/// rendered images are readable.
 Future<void> loadRealFonts() async {
-  final fonts = p.join(
-    Platform.environment['FLUTTER_ROOT']!,
-    'bin',
-    'cache',
-    'artifacts',
-    'material_fonts',
-  );
-  Future<ByteData> read(String name) async =>
-      ByteData.sublistView(await File(p.join(fonts, name)).readAsBytes());
+  Future<ByteData> read(String path) async =>
+      ByteData.sublistView(await File(path).readAsBytes());
 
   final roboto = FontLoader('Roboto');
   for (final weight in ['Regular', 'Medium', 'Bold']) {
-    roboto.addFont(read('Roboto-$weight.ttf'));
+    roboto.addFont(read('assets/fonts/Roboto-$weight.ttf'));
   }
   await roboto.load();
   final mono = FontLoader('JetBrains Mono')
-    ..addFont(
-      File('assets/fonts/JetBrainsMono-Regular.ttf')
-          .readAsBytes()
-          .then(ByteData.sublistView),
-    );
+    ..addFont(read('assets/fonts/JetBrainsMono-Regular.ttf'));
   await mono.load();
   final icons = FontLoader('MaterialIcons')
-    ..addFont(read('MaterialIcons-Regular.otf'));
+    ..addFont(
+      read(
+        p.join(
+          Platform.environment['FLUTTER_ROOT']!,
+          'bin',
+          'cache',
+          'artifacts',
+          'material_fonts',
+          'MaterialIcons-Regular.otf',
+        ),
+      ),
+    );
   await icons.load();
 }
 

@@ -22,7 +22,7 @@ by itself.
   such as Telegram. HDR footage is adjusted to look right on ordinary screens.
 - **Get the sound.** Saves the sound track as its own file, untouched by
   default, or as MP3, M4A, WAV or FLAC.
-- **Remove personal details.** Strips place, date, camera and author
+- **Remove personal data.** Strips place, date, camera and author
   information before sharing. Quick (picture and sound copied untouched) or
   thorough (rebuilt from scratch).
 - **Change file type.** Moves a video into MP4, MKV or MOV in seconds, without
@@ -146,5 +146,6 @@ Adding a goal means one file in `lib/core/scenarios/`, one line in
 ## Licence
 
 Not chosen yet. FFmpeg is a separate program under its own licence (LGPL or
-GPL, depending on the build). The bundled JetBrains Mono font is under the SIL
-Open Font License (`assets/fonts/JetBrainsMono-OFL.txt`).
+GPL, depending on the build). The bundled fonts are Roboto (Apache License
+2.0) and JetBrains Mono (SIL Open Font License); their licence texts are in
+`assets/fonts/`.

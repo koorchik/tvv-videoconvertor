@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
+import '../../../core/ffmpeg/capabilities.dart';
 import '../../../core/output/output_namer.dart';
 import '../../../core/scenarios/registry.dart';
 import '../../../core/scenarios/scenario.dart';
@@ -14,7 +15,6 @@ import '../../recipe/recipe.dart';
 import '../../recipe/recipe_controller.dart';
 import '../../sources/preview_controller.dart';
 import '../../sources/sources_controller.dart';
-import '../../../core/ffmpeg/capabilities.dart';
 import '../scenario_texts.dart';
 import '../technical_text.dart';
 import 'command_dialog.dart';
@@ -22,13 +22,22 @@ import 'language_button.dart';
 
 /// The right-hand panel: what to do with the selected videos, and the
 /// buttons that queue them.
+///
+/// Everything fits without scrolling at the smallest window size, in every
+/// goal and language (a test holds it to that). Each control therefore takes
+/// one row: labels sit beside their controls, and choices that need more
+/// room open in a small window instead of expanding in place.
 class RecipePane extends ConsumerWidget {
   const RecipePane({super.key});
+
+  /// Width of the label column of the option rows.
+  static const labelWidth = 84.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
     final settings = ref.watch(recipeProvider);
     final recipe = settings.recipe;
     final controller = ref.read(recipeProvider.notifier);
@@ -45,345 +54,250 @@ class RecipePane extends ConsumerWidget {
     final presets = scenario.presets
         .where((preset) => presetAvailable(preset, capabilities))
         .toList();
+    final advanced = [
+      for (final option in selected.options)
+        if (advancedOptionVisible(selected, option, recipe.values)) option,
+    ];
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
+        child: LayoutBuilder(
+          builder: (context, constraints) => _Spacing(
+            // More air between rows when the window has the height for it.
+            roomy: constraints.maxHeight >= _Spacing.roomyFrom,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // The choices. Scrolls only as a last resort (very large
+                // text settings); at normal sizes everything fits.
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: Text(
-                            selectedVideos.isEmpty
-                                ? l10n.recipeTitleNone
-                                : l10n.recipeTitleSelected(
-                                    selectedVideos.length,
-                                  ),
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const LanguageButton(),
-                      ],
-                    ),
-                    if (selectedVideos.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          l10n.selectVideosHint,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 14),
-                    _ScenarioGrid(
-                      selected: scenario,
-                      onSelect: (s) => controller.selectPreset(
-                        s.presets
-                            .firstWhere(
-                              (preset) => presetAvailable(preset, capabilities),
-                            )
-                            .id,
-                      ),
-                    ),
-                    _Hint(scenarioHint(l10n, scenario.id)),
-                    const SizedBox(height: 14),
-                    if (presets.length > 1) ...[
-                      SegmentedButton<String>(
-                        showSelectedIcon: false,
-                        segments: [
-                          for (final preset in presets)
-                            ButtonSegment(
-                              value: preset.id,
-                              label: _SegmentLabel(
-                                presetTitle(l10n, preset.id),
-                                caption: presetCaption(
-                                  l10n,
-                                  preset,
-                                  recipe.values,
-                                  capabilities,
-                                ),
-                              ),
-                            ),
-                        ],
-                        selected: {selected.id},
-                        onSelectionChanged: (ids) =>
-                            controller.selectPreset(ids.first),
-                      ),
-                      _Hint(presetHint(l10n, selected.id)),
-                    ],
-                    for (final option in selected.options)
-                      if (optionVisible(selected, option, recipe.values))
-                        _OptionControl(
-                          preset: selected,
-                          option: option,
-                          values: recipe.values,
-                          capabilities: capabilities,
-                          value: selected.choice(recipe.values, option.id),
-                          onChanged: (value) =>
-                              controller.setOption(option.id, value),
-                        ),
-                    _ConvertChoice(
-                      sample: recipe.sample,
-                      onChanged: controller.setSample,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12, left: 4),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.tune_rounded,
-                            size: 14,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: TechnicalText(
-                              technicalSummary(
-                                l10n,
-                                typicalPlan(
-                                  selected,
-                                  recipe.values,
-                                  capabilities,
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (selectedVideos.isNotEmpty)
-                            TextButton(
-                              onPressed: () {
-                                final args = ref
-                                    .read(queueProvider.notifier)
-                                    .commandForVideo(selectedVideos.first);
-                                if (args == null) return;
-                                showDialog<void>(
-                                  context: context,
-                                  builder: (_) => CommandDialog(args: args),
-                                );
-                              },
-                              child: Text(l10n.showCommand),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (selected.options.any(
-                      (o) => advancedOptionVisible(selected, o, recipe.values),
-                    ))
-                      Theme(
-                        // An expansion tile draws divider lines by default.
-                        data: theme.copyWith(dividerColor: Colors.transparent),
-                        child: ExpansionTile(
-                          tilePadding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                          ),
-                          title: Text(
-                            l10n.moreOptions,
-                            style: theme.textTheme.titleSmall,
-                          ),
+                        Row(
                           children: [
-                            for (final option in selected.options)
-                              if (advancedOptionVisible(
-                                selected,
-                                option,
-                                recipe.values,
-                              ))
-                                _OptionControl(
-                                  preset: selected,
-                                  option: option,
-                                  values: recipe.values,
-                                  capabilities: capabilities,
-                                  value: selected.choice(
-                                    recipe.values,
-                                    option.id,
-                                  ),
-                                  onChanged: (value) =>
-                                      controller.setOption(option.id, value),
+                            Text(
+                              l10n.recipeTitleNone,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                selectedVideos.isEmpty
+                                    ? ''
+                                    : l10n.selectedCount(selectedVideos.length),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: muted,
                                 ),
+                              ),
+                            ),
+                            const LanguageButton(),
                           ],
                         ),
+                        const SizedBox(height: 4),
+                        _ScenarioGrid(
+                          selected: scenario,
+                          onSelect: (s) => controller.selectPreset(
+                            s.presets
+                                .firstWhere(
+                                  (preset) =>
+                                      presetAvailable(preset, capabilities),
+                                )
+                                .id,
+                          ),
+                        ),
+                        if (presets.length > 1) ...[
+                          if (constraints.maxHeight >= _Spacing.roomyFrom)
+                            _Hint(scenarioHint(l10n, scenario.id)),
+                          const _Gap(),
+                          SegmentedButton<String>(
+                            showSelectedIcon: false,
+                            segments: [
+                              for (final preset in presets)
+                                ButtonSegment(
+                                  value: preset.id,
+                                  label: _SegmentLabel(
+                                    presetTitle(l10n, preset.id),
+                                    caption: TechnicalText(
+                                      presetCaption(
+                                        l10n,
+                                        preset,
+                                        recipe.values,
+                                        capabilities,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                            selected: {selected.id},
+                            onSelectionChanged: (ids) =>
+                                controller.selectPreset(ids.first),
+                          ),
+                        ],
+                        // One explanation: of the variant where there are
+                        // several, otherwise of the goal.
+                        _Hint(
+                          presets.length > 1
+                              ? presetHint(l10n, selected.id)
+                              : scenarioHint(l10n, scenario.id),
+                        ),
+                        for (final option in selected.options)
+                          if (optionVisible(selected, option, recipe.values))
+                            _OptionRow(
+                              preset: selected,
+                              option: option,
+                              values: recipe.values,
+                              capabilities: capabilities,
+                              onChanged: (value) =>
+                                  controller.setOption(option.id, value),
+                            ),
+                        _LabeledRow(
+                          label: l10n.convertTitle,
+                          child: SegmentedButton<SampleChoice>(
+                            showSelectedIcon: false,
+                            segments: [
+                              ButtonSegment(
+                                value: SampleChoice.none,
+                                label: _SegmentLabel(l10n.convertWhole),
+                              ),
+                              ButtonSegment(
+                                value: SampleChoice.start,
+                                label: _SegmentLabel(
+                                  l10n.convertSampleShort,
+                                  caption: _Caption(l10n.sampleFirst),
+                                ),
+                              ),
+                              ButtonSegment(
+                                value: SampleChoice.middle,
+                                label: _SegmentLabel(
+                                  l10n.convertSampleShort,
+                                  caption: _Caption(l10n.sampleMiddle),
+                                ),
+                              ),
+                            ],
+                            selected: {recipe.sample},
+                            onSelectionChanged: (value) =>
+                                controller.setSample(value.first),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // The outcome: what exactly will be made, where it goes, how
+                // big it will be, and the buttons. Always at the bottom.
+                const _Gap(),
+                Row(
+                  children: [
+                    Icon(Icons.tune_rounded, size: 14, color: muted),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: TechnicalText(
+                        technicalSummary(
+                          l10n,
+                          typicalPlan(selected, recipe.values, capabilities),
+                        ),
                       ),
-                    const SizedBox(height: 18),
-                    _SaveLocation(output: settings.output),
+                    ),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const _AddControls(),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Whole video, or a ten-second sample from the start or the middle.
-class _ConvertChoice extends StatelessWidget {
-  const _ConvertChoice({required this.sample, required this.onChanged});
-
-  final SampleChoice sample;
-  final ValueChanged<SampleChoice> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final isSample = sample != SampleChoice.none;
-    return Padding(
-      padding: const EdgeInsets.only(top: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 8),
-            child: Text(l10n.convertTitle, style: theme.textTheme.titleSmall),
-          ),
-          SegmentedButton<bool>(
-            showSelectedIcon: false,
-            segments: [
-              ButtonSegment(
-                value: false,
-                label: _SegmentLabel(l10n.convertWhole),
-              ),
-              ButtonSegment(
-                value: true,
-                label: _SegmentLabel(l10n.convertSample),
-              ),
-            ],
-            selected: {isSample},
-            onSelectionChanged: (value) =>
-                onChanged(value.first ? SampleChoice.start : SampleChoice.none),
-          ),
-          if (isSample) ...[
-            const SizedBox(height: 8),
-            SegmentedButton<SampleChoice>(
-              showSelectedIcon: false,
-              segments: [
-                ButtonSegment(
-                  value: SampleChoice.start,
-                  label: _SegmentLabel(l10n.sampleFromStart),
+                Row(
+                  children: [
+                    if (advanced.isNotEmpty)
+                      _LinkButton(
+                        label: l10n.moreOptions,
+                        onPressed: () => showDialog<void>(
+                          context: context,
+                          builder: (_) => const _MoreOptionsDialog(),
+                        ),
+                      ),
+                    const Spacer(),
+                    if (selectedVideos.isNotEmpty)
+                      _LinkButton(
+                        label: l10n.showCommand,
+                        onPressed: () {
+                          final args = ref
+                              .read(queueProvider.notifier)
+                              .commandForVideo(selectedVideos.first);
+                          if (args == null) return;
+                          showDialog<void>(
+                            context: context,
+                            builder: (_) => CommandDialog(args: args),
+                          );
+                        },
+                      ),
+                  ],
                 ),
-                ButtonSegment(
-                  value: SampleChoice.middle,
-                  label: _SegmentLabel(l10n.sampleFromMiddle),
-                ),
+                _SaveLocation(output: settings.output),
+                const SizedBox(height: 4),
+                const _AddControls(),
               ],
-              selected: {sample},
-              onSelectionChanged: (value) => onChanged(value.first),
             ),
-          ],
-        ],
+          ),
+        ),
       ),
     );
   }
 }
 
-/// What Add to queue would do, and the buttons.
-class _AddControls extends ConsumerWidget {
-  const _AddControls();
+/// How much air the panel's rows get. Compact at the smallest window size,
+/// where everything must still fit; roomier when there is height to spare.
+class _Spacing extends InheritedWidget {
+  const _Spacing({required this.roomy, required super.child});
+
+  /// Panel height from which the roomier spacing is used.
+  static const roomyFrom = 700.0;
+
+  final bool roomy;
+
+  /// False outside the panel, e.g. in the extra-options window.
+  static bool isRoomy(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_Spacing>()?.roomy ?? false;
+
+  /// Space between rows.
+  static double gap(BuildContext context) => isRoomy(context) ? 16 : 10;
+
+  /// Height of a goal tile.
+  static double tileHeight(BuildContext context) => isRoomy(context) ? 58 : 50;
+
+  /// Space above and below the text of a segmented button.
+  static double segmentPadding(BuildContext context) =>
+      isRoomy(context) ? 6 : 2;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final format = Formatter(l10n);
-    final sources = ref.watch(sourcesProvider);
-    final recipe = ref.watch(recipeProvider.select((s) => s.recipe));
-    final previews = ref.watch(previewProvider);
-    // Rebuilt when jobs change, so "already in the queue" stays true.
-    ref.watch(queueProvider.select((q) => q.jobs));
-    final queue = ref.read(queueProvider.notifier);
-
-    final selected = sources.selectedReady;
-    final all = sources.ready;
-    final addableSelected = queue.addable(selected);
-    final addableAll = queue.addable(all);
-    final batch = batchEstimate(selected, previews);
-    final measuring = selected.any((v) => previews[v.id]?.measuring ?? false);
-
-    final String? summary;
-    if (selected.isEmpty) {
-      summary = null;
-    } else if (addableSelected == 0) {
-      summary = l10n.alreadyQueued;
-    } else if (recipe.isSample) {
-      summary = l10n.samplesCount(addableSelected);
-    } else if (batch != null) {
-      summary = [
-        '${l10n.videoCount(selected.length)}  ·  ${format.bytes(batch.before)}'
-            ' → ${l10n.aboutSize(format.bytes(batch.after))}',
-        format.sizeChange(batch.before, batch.after),
-        if (batch.time != null) l10n.takesAbout(format.wait(batch.time!)),
-      ].join('  ·  ');
-    } else {
-      summary = [
-        l10n.videoCount(selected.length),
-        if (measuring) l10n.estimating,
-      ].join('  ·  ');
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (summary != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10, left: 4),
-            child: Text(
-              summary,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: addableSelected > 0 ? queue.addSelected : null,
-                icon: const Icon(Icons.playlist_add_rounded),
-                label: Text(l10n.addToQueue),
-              ),
-            ),
-            // Only when it would do something the main button does not.
-            if (all.length > selected.length) ...[
-              const SizedBox(width: 10),
-              OutlinedButton(
-                onPressed: addableAll > 0 ? queue.addAll : null,
-                child: Text(l10n.addAllToQueue(all.length)),
-              ),
-            ],
-          ],
-        ),
-      ],
-    );
-  }
+  bool updateShouldNotify(_Spacing oldWidget) => roomy != oldWidget.roomy;
 }
 
-/// The goals as a two-column grid of compact tiles. Only the chosen goal is
-/// explained (below the grid), which keeps six goals on one screen.
+class _Gap extends StatelessWidget {
+  const _Gap();
+
+  @override
+  Widget build(BuildContext context) => SizedBox(height: _Spacing.gap(context));
+}
+
+/// The goals as a compact grid of three columns. The chosen goal is
+/// explained under the grid; the others explain themselves on hover.
 class _ScenarioGrid extends StatelessWidget {
   const _ScenarioGrid({required this.selected, required this.onSelect});
 
   final Scenario selected;
   final ValueChanged<Scenario> onSelect;
 
-  static const _gap = 8.0;
+  static const _gap = 6.0;
+  static const _columns = 3;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final tileWidth = (constraints.maxWidth - _gap) / 2;
+        final tileWidth =
+            (constraints.maxWidth - _gap * (_columns - 1)) / _columns;
         return Wrap(
           spacing: _gap,
           runSpacing: _gap,
@@ -420,42 +334,47 @@ class _ScenarioTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return Material(
-      color: selected ? scheme.primaryContainer : scheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: selected ? scheme.primary : scheme.outlineVariant,
-          width: selected ? 2 : 1,
+    return Tooltip(
+      message: scenarioHint(l10n, scenario.id),
+      child: Material(
+        color: selected ? scheme.primaryContainer : scheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: selected ? scheme.primary : scheme.outlineVariant,
+            width: selected ? 2 : 1,
+          ),
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 60),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                Icon(
-                  scenarioIcon(scenario.id),
-                  size: 24,
-                  color: selected ? scheme.primary : scheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    scenarioTitle(l10n, scenario.id),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: selected ? scheme.onPrimaryContainer : null,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            height: _Spacing.tileHeight(context),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    scenarioIcon(scenario.id),
+                    size: 20,
+                    color: selected ? scheme.primary : scheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      scenarioTitle(l10n, scenario.id),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontSize: 12.5,
+                        height: 1.15,
+                        fontWeight: FontWeight.w600,
+                        color: selected ? scheme.onPrimaryContainer : null,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -474,10 +393,13 @@ class _Hint extends StatelessWidget {
     if (text.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 8, left: 4, right: 4),
+      padding: const EdgeInsets.only(top: 6, left: 2, right: 2),
       child: Text(
         text,
-        style: theme.textTheme.bodyMedium?.copyWith(
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.bodySmall?.copyWith(
+          fontSize: 13,
           color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
@@ -485,13 +407,42 @@ class _Hint extends StatelessWidget {
   }
 }
 
-class _OptionControl extends StatelessWidget {
-  const _OptionControl({
+/// A control with its label to the left, on one row.
+class _LabeledRow extends StatelessWidget {
+  const _LabeledRow({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: _Spacing.gap(context)),
+      child: Row(
+        children: [
+          SizedBox(
+            width: RecipePane.labelWidth,
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
+          Expanded(child: child),
+        ],
+      ),
+    );
+  }
+}
+
+/// One option of a preset: a row of choices, or a switch for yes/no.
+class _OptionRow extends StatelessWidget {
+  const _OptionRow({
     required this.preset,
     required this.option,
     required this.values,
     required this.capabilities,
-    required this.value,
     required this.onChanged,
   });
 
@@ -499,7 +450,6 @@ class _OptionControl extends StatelessWidget {
   final PresetOption option;
   final OptionValues values;
   final Capabilities capabilities;
-  final String value;
   final ValueChanged<String> onChanged;
 
   @override
@@ -507,56 +457,190 @@ class _OptionControl extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final title = optionTitle(l10n, preset.id, option.id);
+    final value = preset.choice(values, option.id);
 
     if (isSwitch(option)) {
       return Padding(
-        padding: const EdgeInsets.only(top: 12),
-        child: SwitchListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-          title: Text(title),
-          subtitle: Text(optionHint(l10n, option.id)),
-          value: value == 'yes',
-          onChanged: (on) => onChanged(on ? 'yes' : 'no'),
+        padding: EdgeInsets.only(top: _Spacing.gap(context) - 2),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleSmall),
+                  Text(
+                    optionHint(l10n, option.id),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Switch(
+              value: value == 'yes',
+              onChanged: (on) => onChanged(on ? 'yes' : 'no'),
+            ),
+          ],
         ),
       );
     }
+    final choices = SegmentedButton<String>(
+      showSelectedIcon: false,
+      segments: [
+        for (final choice in option.choices)
+          ButtonSegment(
+            value: choice,
+            label: _SegmentLabel(
+              choiceLabel(l10n, preset.id, choice),
+              caption: switch (choiceCaption(
+                l10n,
+                preset,
+                option.id,
+                choice,
+                values,
+                capabilities,
+              )) {
+                final caption? => TechnicalText(caption),
+                null => null,
+              },
+            ),
+          ),
+      ],
+      selected: {value},
+      onSelectionChanged: (chosen) => onChanged(chosen.first),
+    );
+    // Beside the label there is room for three choices; more get the full
+    // width, so their labels stay the same size.
+    if (option.choices.length <= 3) {
+      return _LabeledRow(label: title, child: choices);
+    }
     return Padding(
-      padding: const EdgeInsets.only(top: 18),
+      padding: EdgeInsets.only(top: _Spacing.gap(context)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            padding: const EdgeInsets.only(bottom: 4),
             child: Text(title, style: theme.textTheme.titleSmall),
           ),
-          SegmentedButton<String>(
-            showSelectedIcon: false,
-            segments: [
-              for (final choice in option.choices)
-                ButtonSegment(
-                  value: choice,
-                  label: _SegmentLabel(
-                    choiceLabel(l10n, preset.id, choice),
-                    caption: choiceCaption(
-                      l10n,
-                      preset,
-                      option.id,
-                      choice,
-                      values,
-                      capabilities,
-                    ),
-                  ),
-                ),
-            ],
-            selected: {value},
-            onSelectionChanged: (values) => onChanged(values.first),
-          ),
+          choices,
         ],
       ),
     );
   }
 }
 
+/// A segmented-button label, optionally with a small caption under it. It
+/// shrinks slightly rather than wrapping when a translation is long.
+class _SegmentLabel extends StatelessWidget {
+  const _SegmentLabel(this.text, {this.caption});
+
+  final String text;
+  final Widget? caption;
+
+  @override
+  Widget build(BuildContext context) => FittedBox(
+    fit: BoxFit.scaleDown,
+    child: Padding(
+      padding: EdgeInsets.symmetric(vertical: _Spacing.segmentPadding(context)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [Text(text, maxLines: 1, softWrap: false), ?caption],
+      ),
+    ),
+  );
+}
+
+/// A plain-language caption under a segment label.
+class _Caption extends StatelessWidget {
+  const _Caption(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Text(
+      text,
+      maxLines: 1,
+      style: theme.textTheme.labelSmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+}
+
+/// A text button that takes as little height as a line of text.
+class _LinkButton extends StatelessWidget {
+  const _LinkButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => TextButton(
+    style: TextButton.styleFrom(
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      minimumSize: const Size(0, 30),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    ),
+    onPressed: onPressed,
+    child: Text(label),
+  );
+}
+
+/// Options most people never need, in a small window of their own so the
+/// panel does not grow.
+class _MoreOptionsDialog extends ConsumerWidget {
+  const _MoreOptionsDialog();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final recipe = ref.watch(recipeProvider.select((s) => s.recipe));
+    final capabilities = ref
+        .watch(environmentProvider)
+        .requireValue
+        .capabilities;
+    final preset = findPreset(recipe.presetId)!;
+    return AlertDialog(
+      title: Text(l10n.moreOptions.replaceAll('…', '')),
+      content: SizedBox(
+        width: 380,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final option in preset.options)
+              if (advancedOptionVisible(preset, option, recipe.values))
+                _OptionRow(
+                  preset: preset,
+                  option: option,
+                  values: recipe.values,
+                  capabilities: capabilities,
+                  onChanged: (value) => ref
+                      .read(recipeProvider.notifier)
+                      .setOption(option.id, value),
+                ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.close),
+        ),
+      ],
+    );
+  }
+}
+
+/// Where results are saved, on one line.
 class _SaveLocation extends ConsumerWidget {
   const _SaveLocation({required this.output});
 
@@ -571,80 +655,136 @@ class _SaveLocation extends ConsumerWidget {
         ? output.customDir
         : null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Row(
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 4),
-          child: Text(l10n.saveTitle, style: theme.textTheme.titleSmall),
+        Icon(
+          Icons.folder_outlined,
+          size: 18,
+          color: theme.colorScheme.onSurfaceVariant,
         ),
-        Row(
-          children: [
-            Icon(
-              Icons.folder_outlined,
-              size: 20,
-              color: theme.colorScheme.onSurfaceVariant,
+        const SizedBox(width: 8),
+        Expanded(
+          child: Tooltip(
+            message: custom ?? l10n.saveNextToOriginals,
+            child: Text(
+              custom == null ? l10n.saveNextToOriginals : p.basename(custom),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(fontSize: 13),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Tooltip(
-                message: custom ?? '',
-                child: Text(
-                  custom == null
-                      ? l10n.saveNextToOriginals
-                      : p.basename(custom),
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ),
-            ),
-            if (custom != null)
-              IconButton(
-                tooltip: l10n.saveReset,
-                icon: const Icon(Icons.undo_rounded, size: 20),
-                onPressed: () => controller.setOutput(const OutputSettings()),
-              ),
-            TextButton(
-              onPressed: () async {
-                final folder = await getDirectoryPath();
-                if (folder == null) return;
-                controller.setOutput(
-                  OutputSettings(
-                    mode: OutputMode.customFolder,
-                    customDir: folder,
-                  ),
-                );
-              },
-              child: Text(l10n.saveChooseFolder),
-            ),
-          ],
+          ),
+        ),
+        if (custom != null)
+          IconButton(
+            tooltip: l10n.saveReset,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.undo_rounded, size: 18),
+            onPressed: () => controller.setOutput(const OutputSettings()),
+          ),
+        _LinkButton(
+          label: l10n.saveChooseFolder,
+          onPressed: () async {
+            final folder = await getDirectoryPath();
+            if (folder == null) return;
+            controller.setOutput(
+              OutputSettings(mode: OutputMode.customFolder, customDir: folder),
+            );
+          },
         ),
       ],
     );
   }
 }
 
-class _SegmentLabel extends StatelessWidget {
-  const _SegmentLabel(this.text, {this.caption});
-
-  final String text;
-
-  /// Technical name shown small under the label, e.g. "AV1".
-  final String? caption;
+/// What Add to queue would do, and the buttons.
+class _AddControls extends ConsumerWidget {
+  const _AddControls();
 
   @override
-  Widget build(BuildContext context) => FittedBox(
-    fit: BoxFit.scaleDown,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(text, maxLines: 1, softWrap: false),
-          if (caption != null) TechnicalText(caption!),
-        ],
-      ),
-    ),
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final format = Formatter(l10n);
+    final sources = ref.watch(sourcesProvider);
+    final recipe = ref.watch(recipeProvider.select((s) => s.recipe));
+    final previews = ref.watch(previewProvider);
+    // Rebuilt when jobs change, so "already in the queue" stays true.
+    ref.watch(queueProvider.select((q) => q.jobs));
+    final queue = ref.read(queueProvider.notifier);
+
+    final selected = sources.selectedReady;
+    final all = sources.ready;
+    final addableSelected = queue.addable(selected);
+    final addableAll = queue.addable(all);
+    final batch = batchEstimate(selected, previews);
+    final measuring = selected.any((v) => previews[v.id]?.measuring ?? false);
+
+    final String summary;
+    if (selected.isEmpty) {
+      summary = l10n.selectVideosHint;
+    } else if (addableSelected == 0) {
+      summary = l10n.alreadyQueued;
+    } else if (recipe.isSample) {
+      summary = l10n.samplesCount(addableSelected);
+    } else if (batch != null) {
+      summary = [
+        '${l10n.videoCount(selected.length)}  ·  ${format.bytes(batch.before)}'
+            ' → ${l10n.aboutSize(format.bytes(batch.after))}',
+        format.sizeChange(batch.before, batch.after),
+        if (batch.time != null) l10n.takesAbout(format.wait(batch.time!)),
+      ].join('  ·  ');
+    } else {
+      summary = [
+        l10n.videoCount(selected.length),
+        if (measuring) l10n.estimating,
+      ].join('  ·  ');
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8, left: 2),
+          // Two lines are always reserved, so the buttons do not move when
+          // the summary changes length.
+          child: SizedBox(
+            height: 36,
+            child: Align(
+              alignment: AlignmentDirectional.bottomStart,
+              child: Text(
+                summary,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: addableSelected > 0 ? queue.addSelected : null,
+                icon: const Icon(Icons.playlist_add_rounded),
+                label: Text(l10n.addToQueue),
+              ),
+            ),
+            // Only when it would do something the main button does not.
+            if (all.length > selected.length) ...[
+              const SizedBox(width: 10),
+              OutlinedButton(
+                onPressed: addableAll > 0 ? queue.addAll : null,
+                child: Text(l10n.addAllToQueue(all.length)),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 /// Expected total size and time for [videos], or null while nothing has been
@@ -667,8 +807,9 @@ class _SegmentLabel extends StatelessWidget {
   final before = videos.fold(0, (sum, v) => sum + size(v));
   final knownBefore = known.fold(0, (sum, k) => sum + size(k.$1));
   final knownAfter = known.fold(0, (sum, k) => sum + k.$2.bytes);
+  // The ratio is taken first: byte counts multiplied together overflow.
   final after = knownBefore > 0
-      ? (knownAfter * before / knownBefore).round()
+      ? (knownAfter * (before / knownBefore)).round()
       : knownAfter;
 
   // Only re-encodes take noticeable time; quick fixes take seconds.

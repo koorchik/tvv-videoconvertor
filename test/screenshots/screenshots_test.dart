@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tvv_videoconvertor/app/window.dart';
 import 'package:tvv_videoconvertor/core/media/ffprobe.dart';
 
 import '../support/fake_media.dart';
@@ -71,8 +72,7 @@ void main() {
     await addVideos(tester, sources, files);
     await tester.tap(find.text('DSC_0412.MOV'));
     await tester.pump();
-    await tester.ensureVisible(find.text('10-second sample'));
-    await tester.tap(find.text('10-second sample'));
+    await tester.tap(find.text('first 10 s'));
     await tester.pump();
     await addToQueue(tester);
     env.executor.last.finish(
@@ -119,5 +119,16 @@ void main() {
     env.executor.last.report(0.6);
     await tester.pump();
     await saveScreenshot(tester, '5_dark_ukrainian');
+  });
+
+  testWidgets('smallest window, the tallest settings', (tester) async {
+    final env = environment();
+    final sources = await pumpApp(tester, env, size: minimumWindowSize);
+    await addVideos(tester, sources, files.take(2));
+    await tester.tap(find.byIcon(Icons.movie_edit));
+    await tester.pump();
+    await tester.tap(find.byType(Switch));
+    await tester.pump();
+    await saveScreenshot(tester, '6_smallest_window');
   });
 }

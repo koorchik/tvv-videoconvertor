@@ -303,7 +303,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get copied => 'Copied';
 
   @override
-  String get moreOptions => 'More options';
+  String get moreOptions => 'More options…';
 
   @override
   String get optionCodecTitle => 'Editing format';
@@ -412,7 +412,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Saves the sound of a video as a separate file.';
 
   @override
-  String get scenarioPrivacyTitle => 'Remove personal details';
+  String get scenarioPrivacyTitle => 'Remove personal data';
 
   @override
   String get scenarioPrivacyHint =>
@@ -791,4 +791,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectAll => 'Select all';
+
+  @override
+  String selectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get convertSampleShort => 'Sample';
+
+  @override
+  String get sampleFirst => 'first 10 s';
+
+  @override
+  String get sampleMiddle => 'middle 10 s';
 }

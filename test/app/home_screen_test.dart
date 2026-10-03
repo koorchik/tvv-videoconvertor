@@ -80,7 +80,7 @@ void main() {
       final sources = await pumpApp(tester, env);
       await addVideos(tester, sources, ['/videos/holiday.mp4']);
 
-      expect(find.text('What to do with the selected video'), findsOneWidget);
+      expect(find.text('1 selected'), findsOneWidget);
       await addToQueue(tester);
 
       expect(env.executor.started, hasLength(1));
@@ -155,7 +155,7 @@ void main() {
 
       await tester.tap(find.text('second.mp4'));
       await tester.pump();
-      expect(find.text('What to do with the selected video'), findsOneWidget);
+      expect(find.text('1 selected'), findsOneWidget);
 
       await tester.tap(find.text('Add all (2)'));
       await tester.pump();
@@ -195,8 +195,7 @@ void main() {
     ) async {
       final sources = await pumpApp(tester, env);
       await addVideos(tester, sources, ['/videos/holiday.mp4']);
-      await tester.ensureVisible(find.text('10-second sample'));
-      await tester.tap(find.text('10-second sample'));
+      await tester.tap(find.text('first 10 s'));
       await tester.pump();
       expect(find.text('1 sample of 10 seconds'), findsOneWidget);
 
@@ -303,6 +302,22 @@ void main() {
       env.executor.last.finish();
       await tester.pump();
       expect(await offered(), isTrue);
+    });
+
+    testWidgets('extra options open in a small window of their own', (
+      tester,
+    ) async {
+      await pumpApp(tester, env);
+      await tester.tap(find.text('Edit in DaVinci Resolve'));
+      await tester.pump();
+      await tester.tap(find.text('Free Resolve'));
+      await tester.pump();
+      expect(find.text('DNxHR'), findsNothing);
+
+      await tester.tap(find.text('More options…'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('DNxHR'), findsOneWidget);
     });
 
     testWidgets('the format is named beside each plain choice', (tester) async {

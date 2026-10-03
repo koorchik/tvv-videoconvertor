@@ -35,11 +35,11 @@ class AppLocalizationsUk extends AppLocalizations {
       'Виглядає так само, займає значно менше місця. Добре для зберігання та Google Фото.';
 
   @override
-  String get scenarioResolveTitle => 'Монтувати в DaVinci Resolve';
+  String get scenarioResolveTitle => 'Монтувати в Resolve';
 
   @override
   String get scenarioResolveHint =>
-      'Щоб відео відкривалися в Resolve на Linux із зображенням і звуком.';
+      'Щоб відео відкривалися в DaVinci Resolve на Linux із зображенням і звуком.';
 
   @override
   String get presetCompressHevc => 'Працює всюди';
@@ -304,7 +304,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get copied => 'Скопійовано';
 
   @override
-  String get moreOptions => 'Більше налаштувань';
+  String get moreOptions => 'Більше налаштувань…';
 
   @override
   String get optionCodecTitle => 'Формат для монтажу';
@@ -521,7 +521,7 @@ class AppLocalizationsUk extends AppLocalizations {
       'Виберіть відео ліворуч, щоб вирішити, що з ними зробити.';
 
   @override
-  String get convertTitle => 'Конвертувати';
+  String get convertTitle => 'Обсяг';
 
   @override
   String get convertWhole => 'Усе відео';
@@ -795,4 +795,18 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get selectAll => 'Вибрати всі';
+
+  @override
+  String selectedCount(int count) {
+    return 'вибрано: $count';
+  }
+
+  @override
+  String get convertSampleShort => 'Зразок';
+
+  @override
+  String get sampleFirst => 'перші 10 с';
+
+  @override
+  String get sampleMiddle => '10 с із середини';
 }

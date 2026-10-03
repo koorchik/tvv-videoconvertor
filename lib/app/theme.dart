@@ -56,7 +56,14 @@ class SuccessColors extends ThemeExtension<SuccessColors> {
 /// The app's look: soft rounded surfaces, large controls, one accent colour.
 ThemeData buildTheme(Brightness brightness) {
   final scheme = ColorScheme.fromSeed(seedColor: _seed, brightness: brightness);
-  final base = ThemeData(colorScheme: scheme, brightness: brightness);
+  final base = ThemeData(
+    colorScheme: scheme,
+    brightness: brightness,
+    fontFamily: 'Roboto',
+    // Roboto has no arrow glyphs; the other bundled font does. Listing it
+    // here keeps symbols from depending on what each computer has installed.
+    fontFamilyFallback: const ['JetBrains Mono'],
+  );
   final rounded = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(14),
   );
@@ -99,8 +106,8 @@ ThemeData buildTheme(Brightness brightness) {
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: SegmentedButton.styleFrom(
         shape: rounded,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        visualDensity: VisualDensity.standard,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        visualDensity: VisualDensity.compact,
       ),
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(

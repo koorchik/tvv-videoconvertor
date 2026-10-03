@@ -164,7 +164,7 @@
   "commandExplained": "Explained",
   "copy": "Copy",
   "copied": "Copied",
-  "moreOptions": "More options",
+  "moreOptions": "More options…",
   "optionCodecTitle": "Editing format",
   "cmdHideBanner": "Do not print version information",
   "cmdSeek": "Start from this point of the video, in seconds",
@@ -198,7 +198,7 @@
   "scenarioShareHint": "Small and plays on any phone, in Telegram and other messengers. In Telegram, send it as a file to keep this quality.",
   "scenarioAudioTitle": "Get the sound",
   "scenarioAudioHint": "Saves the sound of a video as a separate file.",
-  "scenarioPrivacyTitle": "Remove personal details",
+  "scenarioPrivacyTitle": "Remove personal data",
   "scenarioPrivacyHint": "Removes the hidden notes about place, date, camera and author before you share a video. What is seen and heard stays the same.",
   "scenarioRemuxTitle": "Change file type",
   "scenarioRemuxHint": "Puts the video into another kind of file in seconds, without touching the picture quality.",
@@ -427,5 +427,16 @@
   "noteHdrToneMapped": "Very bright colours will be adjusted to look right on any screen.",
   "noteHdrNotConverted": "This video uses extra-bright colours that may look washed out on a phone.",
   "noteAudioConvertedToFit": "The sound will be converted to fit this file type.",
-  "selectAll": "Select all"
+  "selectAll": "Select all",
+  "selectedCount": "{count} selected",
+  "convertSampleShort": "Sample",
+  "sampleFirst": "first 10 s",
+  "sampleMiddle": "middle 10 s",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

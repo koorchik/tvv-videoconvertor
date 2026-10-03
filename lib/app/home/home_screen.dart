@@ -111,7 +111,7 @@ class _WorkspaceState extends ConsumerState<_Workspace> {
                   ),
                 ),
                 const SizedBox(width: 20),
-                const SizedBox(width: 400, child: RecipePane()),
+                const SizedBox(width: 440, child: RecipePane()),
               ],
             ),
           ),

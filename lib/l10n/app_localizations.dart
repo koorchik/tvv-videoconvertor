@@ -611,7 +611,7 @@ abstract class AppLocalizations {
   /// No description provided for @moreOptions.
   ///
   /// In en, this message translates to:
-  /// **'More options'**
+  /// **'More options…'**
   String get moreOptions;
 
   /// No description provided for @optionCodecTitle.
@@ -815,7 +815,7 @@ abstract class AppLocalizations {
   /// No description provided for @scenarioPrivacyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Remove personal details'**
+  /// **'Remove personal data'**
   String get scenarioPrivacyTitle;
 
   /// No description provided for @scenarioPrivacyHint.
@@ -1465,6 +1465,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select all'**
   String get selectAll;
+
+  /// No description provided for @selectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String selectedCount(int count);
+
+  /// No description provided for @convertSampleShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample'**
+  String get convertSampleShort;
+
+  /// No description provided for @sampleFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'first 10 s'**
+  String get sampleFirst;
+
+  /// No description provided for @sampleMiddle.
+  ///
+  /// In en, this message translates to:
+  /// **'middle 10 s'**
+  String get sampleMiddle;
 }
 
 class _AppLocalizationsDelegate

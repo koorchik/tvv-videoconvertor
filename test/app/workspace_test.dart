@@ -1,0 +1,469 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
+import 'package:tvv_videoconvertor/app/estimates/estimate_cache.dart';
+import 'package:tvv_videoconvertor/app/providers.dart';
+import 'package:tvv_videoconvertor/app/queue/queue_controller.dart';
+import 'package:tvv_videoconvertor/app/queue/queue_state.dart';
+import 'package:tvv_videoconvertor/app/recipe/recipe.dart';
+import 'package:tvv_videoconvertor/app/recipe/recipe_controller.dart';
+import 'package:tvv_videoconvertor/app/settings.dart';
+import 'package:tvv_videoconvertor/app/sources/preview_controller.dart';
+import 'package:tvv_videoconvertor/app/sources/sources_controller.dart';
+import 'package:tvv_videoconvertor/core/output/output_namer.dart';
+import 'package:tvv_videoconvertor/core/settings/settings_store.dart';
+
+import '../support/fake_media.dart';
+import '../support/fakes.dart';
+
+void main() {
+  late FakeEnvironment env;
+  late ProviderContainer container;
+
+  SourcesController sources() => container.read(sourcesProvider.notifier);
+  RecipeController recipe() => container.read(recipeProvider.notifier);
+  QueueController queue() => container.read(queueProvider.notifier);
+  SourcesState sourceState() => container.read(sourcesProvider);
+  QueueState queueState() => container.read(queueProvider);
+  List<QueueJob> jobs() => queueState().jobs;
+  SourceVideo video(String name) =>
+      sourceState().videos.firstWhere((v) => v.path.endsWith('/$name'));
+  String converted(String name) => p.join('/videos', 'Converted', name);
+
+  /// Lets queued-up asynchronous work run.
+  Future<void> settle() => pumpEventQueue();
+
+  Future<ProviderContainer> start({SettingsStore? settings}) async {
+    final next = ProviderContainer(
+      overrides: [
+        ...env.overrides,
+        if (settings != null) settingsStoreProvider.overrideWithValue(settings),
+      ],
+    );
+    addTearDown(next.dispose);
+    await next.read(environmentProvider.future);
+    // The video list keeps previews alive, as the screen does.
+    next.listen(previewProvider, (_, _) {});
+    return next;
+  }
+
+  setUp(() async {
+    env = FakeEnvironment();
+    for (final name in ['a.mp4', 'b.mp4', 'c.mp4']) {
+      env.ffprobe.add('/videos/$name');
+    }
+    container = await start();
+  });
+
+  group('videos', () {
+    test('a file is listed once, however often it is added', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      await sources().addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+
+      expect(sourceState().videos.map((v) => v.path), [
+        '/videos/a.mp4',
+        '/videos/b.mp4',
+      ]);
+    });
+
+    test('newly added videos become the selection', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      await sources().addPaths(['/videos/b.mp4', '/videos/c.mp4']);
+
+      expect(sourceState().selectedIds, {video('b.mp4').id, video('c.mp4').id});
+    });
+
+    test(
+      'a file that is not a video is listed but cannot be selected',
+      () async {
+        await sources().addPaths(['/videos/notes.txt']);
+
+        expect(video('notes.txt').status, SourceStatus.unreadable);
+        expect(sourceState().selectedIds, isEmpty);
+        sources().select(video('notes.txt').id);
+        expect(sourceState().selectedIds, isEmpty);
+      },
+    );
+
+    test('clicking selects one; the checkbox adds and removes', () async {
+      await sources().addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+
+      sources().select(video('a.mp4').id);
+      expect(sourceState().selectedIds, {video('a.mp4').id});
+      sources().toggle(video('b.mp4').id);
+      expect(sourceState().selectedIds, hasLength(2));
+      sources().toggle(video('a.mp4').id);
+      expect(sourceState().selectedIds, {video('b.mp4').id});
+      sources().clearSelection();
+      expect(sourceState().selectedIds, isEmpty);
+      sources().selectAll();
+      expect(sourceState().selectedIds, hasLength(2));
+    });
+  });
+
+  group('adding to the queue', () {
+    test('each selected video becomes a job, and the queue starts', () async {
+      await sources().addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+
+      queue().addSelected();
+      await settle();
+
+      expect(jobs().map((j) => j.outputPath), [
+        converted('a_hevc-crf20.mp4'),
+        converted('b_hevc-crf20.mp4'),
+      ]);
+      expect(jobs().first.status, JobStatus.running);
+      expect(env.executor.started, hasLength(1));
+    });
+
+    test('Add all takes every readable video, whatever is selected', () async {
+      await sources().addPaths([
+        '/videos/a.mp4',
+        '/videos/b.mp4',
+        '/videos/notes.txt',
+      ]);
+      sources().select(video('a.mp4').id);
+
+      queue().addAll();
+
+      expect(jobs().map((j) => p.basename(j.path)), ['a.mp4', 'b.mp4']);
+    });
+
+    test('a job keeps its settings when the panel changes later', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      queue().addSelected();
+
+      recipe().selectPreset('share.phone');
+
+      expect(jobs().single.recipe.presetId, 'compress.hevc');
+      expect(jobs().single.plan.nameSuffix, '_hevc-crf20');
+    });
+
+    test(
+      'changed settings and Add again give a second, differently named job',
+      () async {
+        await sources().addPaths(['/videos/a.mp4']);
+        queue().addSelected();
+
+        recipe().setOption('quality', 'maximum');
+        queue().addSelected();
+
+        expect(jobs().map((j) => p.basename(j.outputPath)), [
+          'a_hevc-crf20.mp4',
+          'a_hevc-crf18.mp4',
+        ]);
+      },
+    );
+
+    test('an identical job waiting or under way is not added twice', () async {
+      await sources().addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+      queue().addSelected();
+
+      expect(queue().addable(sourceState().selectedReady), 0);
+      queue().addSelected();
+
+      expect(jobs(), hasLength(2));
+    });
+
+    test('a finished job can be queued again, under a new name', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      queue().addSelected();
+      await settle();
+      env.executor.last.finish();
+      await settle();
+
+      queue().addSelected();
+
+      expect(jobs().last.outputPath, converted('a_hevc-crf20 (2).mp4'));
+    });
+
+    test('a video that is already right is skipped, not converted', () async {
+      env.ffprobe.add(
+        '/videos/nikon.mov',
+        like: clip(video: 'hevc', audio: [track('pcm_s24le')]),
+      );
+      await sources().addPaths(['/videos/nikon.mov']);
+      recipe().selectPreset('resolve.studio');
+
+      queue().addSelected();
+      await settle();
+
+      expect(jobs().single.status, JobStatus.skipped);
+      expect(env.executor.started, isEmpty);
+    });
+  });
+
+  group('running', () {
+    test('jobs run one after another, in order', () async {
+      await sources().addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+      queue().addSelected();
+      await settle();
+
+      env.executor.last.finish();
+      await settle();
+      expect(jobs().map((j) => j.status), [JobStatus.done, JobStatus.running]);
+      env.executor.last.finish();
+      await settle();
+
+      expect(queueState().busy, isFalse);
+      expect(env.executor.startedNames, ['a.mp4', 'b.mp4']);
+    });
+
+    test('the computer is kept awake only while the queue runs', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      queue().addSelected();
+      await settle();
+      expect(env.inhibitor.isActive, isTrue);
+
+      env.executor.last.finish();
+      await settle();
+
+      expect(env.inhibitor.isActive, isFalse);
+    });
+
+    test('pause holds the queue; continue goes on', () async {
+      await sources().addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+      queue().addSelected();
+      await settle();
+
+      queue().togglePause();
+      expect(jobs().first.status, JobStatus.paused);
+      expect(env.executor.last.paused, isTrue);
+
+      queue().togglePause();
+      expect(jobs().first.status, JobStatus.running);
+      env.executor.last.finish();
+      await settle();
+      expect(jobs().last.status, JobStatus.running);
+    });
+
+    test('a job added while paused waits for continue', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      queue().togglePause();
+
+      queue().addSelected();
+      await settle();
+
+      expect(jobs().single.status, JobStatus.waiting);
+      expect(env.executor.started, isEmpty);
+    });
+
+    test('cancelling the running job moves on to the next', () async {
+      await sources().addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+      queue().addSelected();
+      await settle();
+
+      await queue().cancelActive();
+      await settle();
+
+      expect(jobs().map((j) => j.status), [
+        JobStatus.cancelled,
+        JobStatus.running,
+      ]);
+    });
+
+    test('waiting jobs can be removed and reordered', () async {
+      await sources().addPaths([
+        '/videos/a.mp4',
+        '/videos/b.mp4',
+        '/videos/c.mp4',
+      ]);
+      queue().addSelected();
+      await settle();
+
+      queue().reorder(2, 1);
+      await queue().remove(jobs().last.id);
+      for (var i = 0; i < 2; i++) {
+        env.executor.last.finish();
+        await settle();
+      }
+
+      expect(env.executor.startedNames, ['a.mp4', 'c.mp4']);
+    });
+
+    test('a failed job can be tried again', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      queue().addSelected();
+      await settle();
+      env.executor.last.fail();
+      await settle();
+      expect(jobs().single.status, JobStatus.failed);
+
+      queue().retry(jobs().single.id);
+      await settle();
+
+      expect(jobs().single.status, JobStatus.running);
+      expect(env.executor.started, hasLength(2));
+    });
+
+    test('removing a video keeps the jobs made from it', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      queue().addSelected();
+
+      sources().remove(video('a.mp4').id);
+
+      expect(jobs(), hasLength(1));
+    });
+  });
+
+  group('samples', () {
+    test('a sample goes to Samples with a marked name', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      recipe().setSample(SampleChoice.start);
+
+      queue().addSelected();
+      await settle();
+
+      final job = jobs().single;
+      expect(
+        job.outputPath,
+        p.join('/videos', 'Converted', 'Samples', 'a_hevc-crf20_sample10s.mp4'),
+      );
+      expect(job.sample!.length, sampleLength);
+      expect(env.executor.last.job.sample!.start, Duration.zero);
+    });
+
+    test('a sample from the middle is taken from the middle', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      recipe().setSample(SampleChoice.middle);
+
+      queue().addSelected();
+
+      // The default clip is a minute long.
+      expect(jobs().single.sample!.start, const Duration(seconds: 25));
+      expect(jobs().single.outputPath, endsWith('_sample10s-mid.mp4'));
+    });
+
+    test('several samples of one video with different settings', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      recipe().setSample(SampleChoice.start);
+
+      queue().addSelected();
+      recipe().selectPreset('compress.av1');
+      queue().addSelected();
+
+      expect(jobs().map((j) => p.basename(j.outputPath)), [
+        'a_hevc-crf20_sample10s.mp4',
+        'a_av1-crf25_sample10s.mp4',
+      ]);
+    });
+
+    test(
+      'a finished sample tells the expected size of the whole video',
+      () async {
+        await sources().addPaths(['/videos/a.mp4']);
+        recipe().setSample(SampleChoice.start);
+        queue().addSelected();
+        await settle();
+
+        env.executor.last.finish(
+          bytes: 5000000,
+          elapsed: const Duration(seconds: 4),
+        );
+        await settle();
+
+        final job = jobs().single;
+        final whole = wholeVideoEstimate(job, job.result!)!;
+        expect(whole.bytes, 30000000);
+        expect(whole.time, const Duration(seconds: 24));
+        // ...and the same settings for the whole video now know it too.
+        final key = estimateKey(job.path, job.recipe.withoutSample());
+        expect(
+          container.read(estimateCacheProvider).estimates[key]!.bytes,
+          30000000,
+        );
+      },
+    );
+
+    test(
+      'Convert whole video queues the same settings without the sample',
+      () async {
+        await sources().addPaths(['/videos/a.mp4']);
+        recipe().setSample(SampleChoice.start);
+        queue().addSelected();
+        await settle();
+        env.executor.last.finish();
+        await settle();
+
+        queue().convertWhole(jobs().single.id);
+
+        expect(jobs().last.isSample, isFalse);
+        expect(jobs().last.outputPath, converted('a_hevc-crf20.mp4'));
+        expect(jobs().last.recipe.presetId, 'compress.hevc');
+      },
+    );
+
+    test('Use these settings restores the panel and the selection', () async {
+      await sources().addPaths(['/videos/a.mp4', '/videos/b.mp4']);
+      recipe().selectPreset('share.phone');
+      sources().select(video('a.mp4').id);
+      queue().addSelected();
+      recipe().selectPreset('compress.av1');
+      sources().select(video('b.mp4').id);
+
+      queue().useSettings(jobs().single.id);
+
+      expect(container.read(recipeProvider).recipe.presetId, 'share.phone');
+      expect(sourceState().selectedIds, {video('a.mp4').id});
+    });
+  });
+
+  group('expected sizes', () {
+    test('selected videos are measured while nothing converts', () async {
+      await sources().addPaths(['/videos/a.mp4']);
+      await settle();
+
+      final preview = container.read(previewProvider)[video('a.mp4').id]!;
+      expect(preview.estimate!.bytes, 150000000);
+      expect(env.estimator.measured, ['/videos/a.mp4']);
+    });
+
+    test('measuring waits while the queue converts', () async {
+      env.estimator.hold = true;
+      await sources().addPaths(['/videos/a.mp4']);
+      await settle();
+      queue().addSelected();
+      await settle();
+      expect(env.estimator.cancels, 1);
+
+      await sources().addPaths(['/videos/b.mp4']);
+      await settle();
+
+      expect(env.estimator.measured, ['/videos/a.mp4']);
+    });
+
+    test('a quick fix is calculated, not measured', () async {
+      recipe().selectPreset('resolve.studio');
+      await sources().addPaths(['/videos/a.mp4']);
+      await settle();
+
+      final preview = container.read(previewProvider)[video('a.mp4').id]!;
+      expect(preview.estimate!.measured, isFalse);
+      expect(env.estimator.measured, isEmpty);
+    });
+  });
+
+  group('remembered between runs', () {
+    test('the goal and folder are, the sample choice is not', () async {
+      final settings = MemorySettingsStore();
+      container = await start(settings: settings);
+      recipe().selectPreset('resolve.free');
+      recipe().setOption('quality', 'best');
+      recipe().setSample(SampleChoice.middle);
+      recipe().setOutput(
+        const OutputSettings(
+          mode: OutputMode.customFolder,
+          customDir: '/exports',
+        ),
+      );
+
+      container = await start(settings: settings);
+
+      final restored = container.read(recipeProvider);
+      expect(restored.recipe.presetId, 'resolve.free');
+      expect(restored.recipe.values, {'quality': 'best'});
+      expect(restored.recipe.sample, SampleChoice.none);
+      expect(restored.output.customDir, '/exports');
+    });
+  });
+}

@@ -85,7 +85,7 @@ class CompressPreset implements Preset {
       audio: _audio(input),
       muxer: 'mp4',
       extension: 'mp4',
-      nameSuffix: isHevc ? '_hevc' : '_av1',
+      nameSuffix: '_${encoderTag(encode)}',
       outputArgs: [
         if (video.isVariableFrameRate) ...constantFrameRateArgs(video),
         // Apple players only recognise HEVC under this tag.

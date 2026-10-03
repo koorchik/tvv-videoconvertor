@@ -110,7 +110,7 @@ class StripMetadataPreset implements Preset {
           : const AudioCopy(),
       muxer: muxer,
       extension: extension,
-      nameSuffix: '_clean',
+      nameSuffix: thorough ? '_clean-reencoded' : '_clean',
       keepMetadata: false,
       // The file's date says when the video was shot.
       keepFileDate: false,

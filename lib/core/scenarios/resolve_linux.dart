@@ -179,7 +179,7 @@ class ResolveLinuxPreset implements Preset {
       audio: pcmAudio,
       muxer: 'mov',
       extension: 'mov',
-      nameSuffix: _suffix,
+      nameSuffix: '_${intermediate.tag}',
       outputArgs: frameRate,
       notes: notes,
       estimatedBytes:
@@ -230,7 +230,7 @@ class ResolveLinuxPreset implements Preset {
       audio: flacAudio,
       muxer: 'mp4',
       extension: 'mp4',
-      nameSuffix: _suffix,
+      nameSuffix: '_${encoderTag(encode)}',
       outputArgs: frameRate,
       notes: [...notes, PlanNote.experimentalAv1Intermediate],
       cost: useGpu
@@ -247,8 +247,11 @@ class _Intermediate {
     required this.args,
     required this.megabitsAtUhd30,
     required this.cpuThreads,
+    required this.tag,
   });
 
+  /// For the file name: `prores-hq`, `dnxhr-hqx`.
+  final String tag;
   final String encoder;
   final String pixFmt;
   final List<String> args;
@@ -259,12 +262,13 @@ class _Intermediate {
 /// ProRes is 10-bit at every size tier, so one family serves 8-bit and 10-bit
 /// sources alike. Bitrates are Apple's published targets.
 _Intermediate _prores(String level) {
-  final (profile, megabits) = switch (level) {
-    'best' => ('3', 884.0),
-    'smaller' => ('1', 410.0),
-    _ => ('2', 589.0),
+  final (profile, megabits, tag) = switch (level) {
+    'best' => ('3', 884.0, 'prores-hq'),
+    'smaller' => ('1', 410.0, 'prores-lt'),
+    _ => ('2', 589.0, 'prores422'),
   };
   return _Intermediate(
+    tag: tag,
     encoder: 'prores_ks',
     pixFmt: 'yuv422p10le',
     args: ['-profile:v', profile, '-vendor', 'apl0'],
@@ -283,6 +287,7 @@ _Intermediate _dnxhr(VideoStream video, String level) {
     (false, _) => ('dnxhr_hq', 833.0),
   };
   return _Intermediate(
+    tag: profile.replaceFirst('dnxhr_', 'dnxhr-'),
     encoder: 'dnxhd',
     pixFmt: tenBit ? 'yuv422p10le' : 'yuv422p',
     args: ['-profile:v', profile],

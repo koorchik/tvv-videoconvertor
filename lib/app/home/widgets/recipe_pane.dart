@@ -1,7 +1,6 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show toBeginningOfSentenceCase;
 import 'package:path/path.dart' as p;
 
 import '../../../core/output/output_namer.dart';
@@ -11,32 +10,37 @@ import '../../../l10n/app_localizations.dart';
 import '../../format.dart';
 import '../../providers.dart';
 import '../../queue/queue_controller.dart';
-import '../../queue/queue_state.dart';
-import '../../theme.dart';
+import '../../recipe/recipe.dart';
+import '../../recipe/recipe_controller.dart';
+import '../../sources/preview_controller.dart';
+import '../../sources/sources_controller.dart';
 import '../../../core/ffmpeg/capabilities.dart';
 import '../scenario_texts.dart';
 import '../technical_text.dart';
+import 'command_dialog.dart';
 import 'language_button.dart';
 
-/// The right-hand panel: what to do with the videos, where to save them, and
-/// the button that starts it. While converting it shows overall progress and
-/// the controls to pause or stop.
-class TaskPane extends ConsumerWidget {
-  const TaskPane({super.key});
+/// The right-hand panel: what to do with the selected videos, and the
+/// buttons that queue them.
+class RecipePane extends ConsumerWidget {
+  const RecipePane({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final state = ref.watch(queueControllerProvider);
-    final controller = ref.read(queueControllerProvider.notifier);
+    final settings = ref.watch(recipeProvider);
+    final recipe = settings.recipe;
+    final controller = ref.read(recipeProvider.notifier);
+    final selectedVideos = ref.watch(
+      sourcesProvider.select((s) => s.selectedReady),
+    );
     final capabilities = ref
         .watch(environmentProvider)
         .requireValue
         .capabilities;
 
-    final goal = state.editedGoal;
-    final selected = findPreset(goal.presetId)!;
+    final selected = findPreset(recipe.presetId)!;
     final scenario = scenarios.firstWhere((s) => s.presets.contains(selected));
     final presets = scenario.presets
         .where((preset) => presetAvailable(preset, capabilities))
@@ -58,10 +62,10 @@ class TaskPane extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            state.selectedIds.isEmpty
-                                ? l10n.goalTitle
-                                : l10n.goalForSelected(
-                                    state.selectedIds.length,
+                            selectedVideos.isEmpty
+                                ? l10n.recipeTitleNone
+                                : l10n.recipeTitleSelected(
+                                    selectedVideos.length,
                                   ),
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w600,
@@ -71,20 +75,11 @@ class TaskPane extends ConsumerWidget {
                         const LanguageButton(),
                       ],
                     ),
-                    if (state.selectedIds.isNotEmpty)
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: TextButton.icon(
-                          onPressed: controller.clearSelection,
-                          icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                          label: Text(l10n.backToAll),
-                        ),
-                      )
-                    else if (state.items.length > 1)
+                    if (selectedVideos.isEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
-                          l10n.goalAppliesToAll,
+                          l10n.selectVideosHint,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -115,7 +110,7 @@ class TaskPane extends ConsumerWidget {
                                 caption: presetCaption(
                                   l10n,
                                   preset,
-                                  goal.values,
+                                  recipe.values,
                                   capabilities,
                                 ),
                               ),
@@ -128,16 +123,20 @@ class TaskPane extends ConsumerWidget {
                       _Hint(presetHint(l10n, selected.id)),
                     ],
                     for (final option in selected.options)
-                      if (optionVisible(selected, option, goal.values))
+                      if (optionVisible(selected, option, recipe.values))
                         _OptionControl(
                           preset: selected,
                           option: option,
-                          values: goal.values,
+                          values: recipe.values,
                           capabilities: capabilities,
-                          value: selected.choice(goal.values, option.id),
+                          value: selected.choice(recipe.values, option.id),
                           onChanged: (value) =>
                               controller.setOption(option.id, value),
                         ),
+                    _ConvertChoice(
+                      sample: recipe.sample,
+                      onChanged: controller.setSample,
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(top: 12, left: 4),
                       child: Row(
@@ -154,17 +153,31 @@ class TaskPane extends ConsumerWidget {
                                 l10n,
                                 typicalPlan(
                                   selected,
-                                  goal.values,
+                                  recipe.values,
                                   capabilities,
                                 ),
                               ),
                             ),
                           ),
+                          if (selectedVideos.isNotEmpty)
+                            TextButton(
+                              onPressed: () {
+                                final args = ref
+                                    .read(queueProvider.notifier)
+                                    .commandForVideo(selectedVideos.first);
+                                if (args == null) return;
+                                showDialog<void>(
+                                  context: context,
+                                  builder: (_) => CommandDialog(args: args),
+                                );
+                              },
+                              child: Text(l10n.showCommand),
+                            ),
                         ],
                       ),
                     ),
                     if (selected.options.any(
-                      (o) => advancedOptionVisible(selected, o, goal.values),
+                      (o) => advancedOptionVisible(selected, o, recipe.values),
                     ))
                       Theme(
                         // An expansion tile draws divider lines by default.
@@ -182,15 +195,15 @@ class TaskPane extends ConsumerWidget {
                               if (advancedOptionVisible(
                                 selected,
                                 option,
-                                goal.values,
+                                recipe.values,
                               ))
                                 _OptionControl(
                                   preset: selected,
                                   option: option,
-                                  values: goal.values,
+                                  values: recipe.values,
                                   capabilities: capabilities,
                                   value: selected.choice(
-                                    goal.values,
+                                    recipe.values,
                                     option.id,
                                   ),
                                   onChanged: (value) =>
@@ -200,19 +213,158 @@ class TaskPane extends ConsumerWidget {
                         ),
                       ),
                     const SizedBox(height: 18),
-                    _SaveLocation(output: state.output),
+                    _SaveLocation(output: settings.output),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            if (state.isRunning)
-              _RunningControls(state: state)
-            else
-              _StartControls(state: state),
+            const _AddControls(),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Whole video, or a ten-second sample from the start or the middle.
+class _ConvertChoice extends StatelessWidget {
+  const _ConvertChoice({required this.sample, required this.onChanged});
+
+  final SampleChoice sample;
+  final ValueChanged<SampleChoice> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isSample = sample != SampleChoice.none;
+    return Padding(
+      padding: const EdgeInsets.only(top: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            child: Text(l10n.convertTitle, style: theme.textTheme.titleSmall),
+          ),
+          SegmentedButton<bool>(
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(
+                value: false,
+                label: _SegmentLabel(l10n.convertWhole),
+              ),
+              ButtonSegment(
+                value: true,
+                label: _SegmentLabel(l10n.convertSample),
+              ),
+            ],
+            selected: {isSample},
+            onSelectionChanged: (value) =>
+                onChanged(value.first ? SampleChoice.start : SampleChoice.none),
+          ),
+          if (isSample) ...[
+            const SizedBox(height: 8),
+            SegmentedButton<SampleChoice>(
+              showSelectedIcon: false,
+              segments: [
+                ButtonSegment(
+                  value: SampleChoice.start,
+                  label: _SegmentLabel(l10n.sampleFromStart),
+                ),
+                ButtonSegment(
+                  value: SampleChoice.middle,
+                  label: _SegmentLabel(l10n.sampleFromMiddle),
+                ),
+              ],
+              selected: {sample},
+              onSelectionChanged: (value) => onChanged(value.first),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// What Add to queue would do, and the buttons.
+class _AddControls extends ConsumerWidget {
+  const _AddControls();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final format = Formatter(l10n);
+    final sources = ref.watch(sourcesProvider);
+    final recipe = ref.watch(recipeProvider.select((s) => s.recipe));
+    final previews = ref.watch(previewProvider);
+    // Rebuilt when jobs change, so "already in the queue" stays true.
+    ref.watch(queueProvider.select((q) => q.jobs));
+    final queue = ref.read(queueProvider.notifier);
+
+    final selected = sources.selectedReady;
+    final all = sources.ready;
+    final addableSelected = queue.addable(selected);
+    final addableAll = queue.addable(all);
+    final batch = batchEstimate(selected, previews);
+    final measuring = selected.any((v) => previews[v.id]?.measuring ?? false);
+
+    final String? summary;
+    if (selected.isEmpty) {
+      summary = null;
+    } else if (addableSelected == 0) {
+      summary = l10n.alreadyQueued;
+    } else if (recipe.isSample) {
+      summary = l10n.samplesCount(addableSelected);
+    } else if (batch != null) {
+      summary = [
+        '${l10n.videoCount(selected.length)}  ·  ${format.bytes(batch.before)}'
+            ' → ${l10n.aboutSize(format.bytes(batch.after))}',
+        format.sizeChange(batch.before, batch.after),
+        if (batch.time != null) l10n.takesAbout(format.wait(batch.time!)),
+      ].join('  ·  ');
+    } else {
+      summary = [
+        l10n.videoCount(selected.length),
+        if (measuring) l10n.estimating,
+      ].join('  ·  ');
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (summary != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10, left: 4),
+            child: Text(
+              summary,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: addableSelected > 0 ? queue.addSelected : null,
+                icon: const Icon(Icons.playlist_add_rounded),
+                label: Text(l10n.addToQueue),
+              ),
+            ),
+            // Only when it would do something the main button does not.
+            if (all.length > selected.length) ...[
+              const SizedBox(width: 10),
+              OutlinedButton(
+                onPressed: addableAll > 0 ? queue.addAll : null,
+                child: Text(l10n.addAllToQueue(all.length)),
+              ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 }
@@ -414,7 +566,7 @@ class _SaveLocation extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final controller = ref.read(queueControllerProvider.notifier);
+    final controller = ref.read(recipeProvider.notifier);
     final custom = output.mode == OutputMode.customFolder
         ? output.customDir
         : null;
@@ -471,267 +623,6 @@ class _SaveLocation extends ConsumerWidget {
   }
 }
 
-class _StartControls extends ConsumerWidget {
-  const _StartControls({required this.state});
-
-  final QueueState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final format = Formatter(l10n);
-    final controller = ref.read(queueControllerProvider.notifier);
-    final pending = state.pending.toList();
-    final sampleRunning = state.sample?.isRunning ?? false;
-    final sampleTarget =
-        pending.where((i) => state.selectedIds.contains(i.id)).firstOrNull ??
-        pending.firstOrNull;
-
-    final done = state.items.where((i) => i.status == ItemStatus.done);
-    final before = done.fold<int>(0, (s, i) => s + (i.info?.sizeBytes ?? 0));
-    final after = done.fold<int>(0, (s, i) => s + (i.result?.outputBytes ?? 0));
-    final finished = pending.isEmpty && done.isNotEmpty;
-
-    final batch = batchEstimate(pending);
-    final measuring = pending.any((i) => i.estimating);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (finished)
-          _Summary(
-            icon: Icons.celebration_rounded,
-            title: l10n.allDone,
-            detail:
-                '${l10n.savedSummary(format.bytes(before), format.bytes(after))}'
-                ', ${format.sizeChange(before, after)}',
-          )
-        else if (state.items.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10, left: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.toConvertCount(pending.length),
-                  style: theme.textTheme.titleSmall,
-                ),
-                if (batch != null || measuring)
-                  Text(
-                    batch == null
-                        ? toBeginningOfSentenceCase(l10n.estimating)
-                        : [
-                            '${format.bytes(batch.before)} → '
-                                '${l10n.aboutSize(format.bytes(batch.after))}',
-                            format.sizeChange(batch.before, batch.after),
-                            if (batch.time != null)
-                              l10n.takesAbout(format.wait(batch.time!)),
-                          ].join('  ·  '),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        FilledButton.icon(
-          onPressed: pending.isEmpty || sampleRunning ? null : controller.start,
-          icon: const Icon(Icons.play_arrow_rounded),
-          label: Text(l10n.start),
-        ),
-        const SizedBox(height: 10),
-        if (sampleRunning)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox.square(
-                dimension: 18,
-                child: CircularProgressIndicator(strokeWidth: 2.5),
-              ),
-              const SizedBox(width: 12),
-              Flexible(child: Text(l10n.sampleMaking)),
-              TextButton(
-                onPressed: controller.cancelActive,
-                child: Text(l10n.cancel),
-              ),
-            ],
-          )
-        else
-          MenuAnchor(
-            builder: (context, menu, _) => OutlinedButton.icon(
-              onPressed: pending.isEmpty
-                  ? null
-                  : () => menu.isOpen ? menu.close() : menu.open(),
-              icon: const Icon(Icons.visibility_outlined),
-              label: Text(l10n.trySample),
-            ),
-            menuChildren: [
-              MenuItemButton(
-                onPressed: pending.isEmpty
-                    ? null
-                    : () => controller.runSample(sampleTarget!.id),
-                child: Text(l10n.sampleFromStart),
-              ),
-              MenuItemButton(
-                onPressed: pending.isEmpty
-                    ? null
-                    : () => controller.runSample(
-                        sampleTarget!.id,
-                        fromMiddle: true,
-                      ),
-                child: Text(l10n.sampleFromMiddle),
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-}
-
-class _RunningControls extends ConsumerWidget {
-  const _RunningControls({required this.state});
-
-  final QueueState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final format = Formatter(l10n);
-    final controller = ref.read(queueControllerProvider.notifier);
-    final active = state.activeItem;
-    final paused = active?.status == ItemStatus.paused;
-
-    // Progress across the batch, weighted by video length: a two-hour video
-    // counts for more than a ten-second clip.
-    double seconds(QueueItem i) =>
-        (i.info?.duration.inMilliseconds ?? 0) / 1000;
-    final finishedItems = state.items.where(
-      (i) => i.status == ItemStatus.done && i.plan != null,
-    );
-    final waiting = state.pending.toList();
-    final doneSeconds = finishedItems.fold<double>(0, (s, i) => s + seconds(i));
-    final activeSeconds = active == null
-        ? 0.0
-        : seconds(active) * (active.progress?.fraction ?? 0);
-    final totalSeconds =
-        doneSeconds +
-        (active == null ? 0 : seconds(active)) +
-        waiting.fold<double>(0, (s, i) => s + seconds(i));
-    final fraction = totalSeconds > 0
-        ? (doneSeconds + activeSeconds) / totalSeconds
-        : 0.0;
-
-    // The waiting files are assumed to convert at the speed of the current
-    // one. Quick fixes take seconds and are not counted.
-    final speed = active?.progress?.speed;
-    final remaining = active?.progress?.remaining;
-    Duration? left;
-    if (remaining != null && speed != null && speed > 0) {
-      final waitingEncodes = waiting
-          .where((i) => i.plan?.kind == PlanKind.encode)
-          .fold<double>(0, (s, i) => s + seconds(i));
-      left =
-          remaining +
-          Duration(milliseconds: (waitingEncodes / speed * 1000).round());
-    }
-    final position = finishedItems.length + 1;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          [
-            l10n.convertingCount(position, position + waiting.length),
-            if (left != null) l10n.progressLeft(format.wait(left)),
-          ].join('  ·  '),
-          style: theme.textTheme.titleSmall,
-        ),
-        const SizedBox(height: 10),
-        LinearProgressIndicator(value: fraction > 0 ? fraction : null),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: active == null ? null : controller.togglePause,
-                icon: Icon(
-                  paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                ),
-                label: Text(paused ? l10n.resume : l10n.pause),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: controller.stopAll,
-                icon: const Icon(Icons.stop_rounded),
-                label: Text(l10n.stop),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _Summary extends StatelessWidget {
-  const _Summary({
-    required this.icon,
-    required this.title,
-    required this.detail,
-  });
-
-  final IconData icon;
-  final String title;
-  final String detail;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final success = SuccessColors.of(context);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: success.container,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: success.onContainer),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: success.onContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  detail,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: success.onContainer,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A segmented-button label that shrinks slightly rather than wrapping when
-/// a translation is longer than its segment.
 class _SegmentLabel extends StatelessWidget {
   const _SegmentLabel(this.text, {this.caption});
 
@@ -756,38 +647,40 @@ class _SegmentLabel extends StatelessWidget {
   );
 }
 
-/// Expected total size and time for the files about to be converted, or null
-/// while nothing has been measured yet.
+/// Expected total size and time for [videos], or null while nothing has been
+/// worked out yet.
 ///
-/// Files not measured yet are assumed to shrink like the measured ones, in
+/// Videos not measured yet are assumed to shrink like the measured ones, in
 /// proportion to their size, and to take time in proportion to their length.
 ({int before, int after, Duration? time})? batchEstimate(
-  List<QueueItem> pending,
+  List<SourceVideo> videos,
+  Map<int, Preview> previews,
 ) {
-  final measured = pending.where((i) => i.estimate != null).toList();
-  if (measured.isEmpty) return null;
-  int size(QueueItem i) => i.info?.sizeBytes ?? 0;
-  int length(QueueItem i) => i.info?.duration.inMilliseconds ?? 0;
+  final known = [
+    for (final video in videos)
+      if (previews[video.id]?.estimate case final estimate?) (video, estimate),
+  ];
+  if (known.isEmpty) return null;
+  int size(SourceVideo v) => v.info?.sizeBytes ?? 0;
+  int length(SourceVideo v) => v.info?.duration.inMilliseconds ?? 0;
 
-  final before = pending.fold(0, (sum, i) => sum + size(i));
-  final measuredBefore = measured.fold(0, (sum, i) => sum + size(i));
-  final measuredAfter = measured.fold(0, (sum, i) => sum + i.estimate!.bytes);
-  final after = measuredBefore > 0
-      ? (measuredAfter * before / measuredBefore).round()
-      : measuredAfter;
+  final before = videos.fold(0, (sum, v) => sum + size(v));
+  final knownBefore = known.fold(0, (sum, k) => sum + size(k.$1));
+  final knownAfter = known.fold(0, (sum, k) => sum + k.$2.bytes);
+  final after = knownBefore > 0
+      ? (knownAfter * before / knownBefore).round()
+      : knownAfter;
 
   // Only re-encodes take noticeable time; quick fixes take seconds.
-  final timed = measured.where((i) => i.estimate!.time != null).toList();
-  final encodes = pending.where((i) => i.plan?.kind == PlanKind.encode);
-  final timedLength = timed.fold(0, (sum, i) => sum + length(i));
-  final encodeLength = encodes.fold(0, (sum, i) => sum + length(i));
-  final timedSpent = timed.fold(
-    Duration.zero,
-    (sum, i) => sum + i.estimate!.time!,
+  final timed = known.where((k) => k.$2.time != null).toList();
+  final encodes = videos.where(
+    (v) => previews[v.id]?.plan.kind == PlanKind.encode,
   );
+  final timedLength = timed.fold(0, (sum, k) => sum + length(k.$1));
+  final encodeLength = encodes.fold(0, (sum, v) => sum + length(v));
+  final timedSpent = timed.fold(Duration.zero, (sum, k) => sum + k.$2.time!);
   final time = timedLength > 0
       ? timedSpent * (encodeLength / timedLength)
       : null;
-
   return (before: before, after: after, time: time);
 }

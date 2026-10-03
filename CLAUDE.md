@@ -17,9 +17,26 @@ videos and gets small files that look the same, with no help. So:
   terms, in both languages.
 - Everything has a safe default. "Make it small" with "Works everywhere" is
   pre-selected: drop, Start, done.
-- More is available on request: "More options", "Show the command" on each
-  video, and a goal per video (click a video; with none selected the goal
-  applies to all videos that have no goal of their own).
+- More is available on request: "More options", "Show the command" and
+  "Video details" in the ⋯ menus.
+
+## The model
+
+- **Videos** (`app/sources/`): files added, each path once. Selection says
+  which videos the panel applies to; newly added videos become the selection.
+- **Recipe** (`app/recipe/`): the panel's goal, options, whole video or
+  sample, and output folder. Goal and folder are remembered; the sample choice
+  is not.
+- **Queue** (`app/queue/`): jobs are snapshots (video info, recipe, plan,
+  output path) made by Add to queue / Add all; later panel changes do not
+  touch them. The queue runs by itself, one job at a time. An identical job
+  that is still pending is not added twice.
+- **Estimates** (`app/estimates/`, `app/sources/preview_controller.dart`):
+  expected sizes are shared by the video list and the queue, measured only
+  while the queue is idle, and learned from finished samples.
+- **Output names** carry the settings via each preset's `nameSuffix`
+  (`_hevc-crf20`); samples add `_sample10s` and go to `Samples/`.
+  `test/core/scenarios/file_names_test.dart` lists them.
 
 ## Commands
 
@@ -49,9 +66,8 @@ After a UI change, run the screenshots and look at the PNGs. Multiple
     progress, cancel, pause), `command_text.dart` (commands as text for people).
   - `queue/job_executor.dart`: one conversion from plan to finished file.
   - `estimate/`, `output/`, `platform/`.
-- `lib/app/`: the UI. `queue/queue_controller.dart` is the Riverpod notifier
-  holding the list, measuring expected sizes and running it; `settings.dart`
-  holds remembered choices (language, goal, folder); `home/` is the single screen;
+- `lib/app/`: the UI and its state (see The model). `settings.dart` holds
+  remembered choices; `home/` is the single screen;
   `home/scenario_texts.dart` maps scenario, preset and option ids to texts.
 - `lib/l10n/`: `app_en.arb` (template) and `app_uk.arb`. The generated
   `app_localizations*.dart` files are committed.
@@ -113,10 +129,13 @@ The UI renders presets and options generically; it needs no other change.
 - **Widget tests:** real disk access never completes inside the test's fake
   clock; go through `addVideos()` in `pump_app.dart` (it uses
   `tester.runAsync`). Awaiting `StreamSubscription.cancel()` also escapes the
-  fake clock; the controller does not await it.
+  fake clock; the controller does not await it. `pumpAndSettle` never
+  returns while a job runs (its progress bar animates); pump fixed times.
 - **Fonts:** the generic `monospace` family does not resolve to a
   fixed-width font on every Linux desktop, so JetBrains Mono is bundled for
   the command view.
+- **MP4 drops unknown tags** such as `make` when writing; MOV keeps them.
+  Matters for test fixtures with planted metadata.
 - **Expected size** of a quality-targeted encode cannot be calculated; the
   estimator encodes 3-second pieces spread over the video (picture only; the
   sound is calculated) and scales up. It is stopped when converting starts.

@@ -1,8 +1,12 @@
 @Tags(['screenshots'])
 library;
 
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tvv_videoconvertor/core/media/ffprobe.dart';
 
 import '../support/fake_media.dart';
 import '../support/fakes.dart';
@@ -26,13 +30,12 @@ void main() {
       '/videos/Z5_0007.MOV',
       like: clip(video: 'hevc', audio: [track('pcm_s24le')]),
     );
+    final report = jsonDecode(
+      File('test/fixtures/hlg_clip_ffprobe.json').readAsStringSync(),
+    ) as Map<String, dynamic>;
     env.ffprobe.add(
       '/videos/birthday final export.mov',
-      like: clip(
-        width: 1920,
-        height: 1080,
-        duration: const Duration(minutes: 12, seconds: 40),
-      ),
+      like: parseFfprobeJson('/videos/birthday final export.mov', report),
     );
     return env;
   }
@@ -44,94 +47,77 @@ void main() {
     '/videos/birthday final export.mov',
   ];
 
+  Future<void> addToQueue(WidgetTester tester) async {
+    await tester.tap(find.text('Add to queue'));
+    await tester.pump();
+    await tester.pump();
+  }
+
   testWidgets('empty', (tester) async {
     await pumpApp(tester, environment());
     await saveScreenshot(tester, '1_empty');
   });
 
-  testWidgets('files added', (tester) async {
-    final queue = await pumpApp(tester, environment());
-    await addVideos(tester, queue, files);
-    await saveScreenshot(tester, '2_files_added');
-  });
-
-  testWidgets('resolve goal', (tester) async {
-    final queue = await pumpApp(tester, environment());
-    await addVideos(tester, queue, files);
-    await tester.tap(find.byIcon(Icons.movie_edit));
+  testWidgets('videos added', (tester) async {
+    final sources = await pumpApp(tester, environment());
+    await addVideos(tester, sources, files);
     await tester.pump();
-    await saveScreenshot(tester, '3_resolve_goal');
+    await saveScreenshot(tester, '2_videos_added');
   });
 
-  testWidgets('converting', (tester) async {
+  testWidgets('queue with a finished sample', (tester) async {
     final env = environment();
-    final queue = await pumpApp(tester, env);
-    await addVideos(tester, queue, files);
-    await tester.tap(find.text('Start'));
+    final sources = await pumpApp(tester, env);
+    await addVideos(tester, sources, files);
+    await tester.tap(find.text('DSC_0412.MOV'));
     await tester.pump();
-    env.executor.last.finish(bytes: 140000000);
+    await tester.ensureVisible(find.text('10-second sample'));
+    await tester.tap(find.text('10-second sample'));
+    await tester.pump();
+    await addToQueue(tester);
+    env.executor.last.finish(
+      bytes: 2600000,
+      elapsed: const Duration(seconds: 6),
+    );
     await tester.pump();
     await tester.pump();
-    env.executor.last.report(0.37);
+    await tester.tap(find.text('Whole video'));
     await tester.pump();
+    await tester.tap(find.text('DSC_0413.MOV'));
     await tester.pump();
-    await saveScreenshot(tester, '4_converting');
+    await addToQueue(tester);
+    env.executor.last.report(0.42);
+    await tester.pump();
+    await tester.tap(find.text('Z5_0007.MOV'));
+    await tester.pump();
+    await addToQueue(tester);
+    await saveScreenshot(tester, '3_queue');
   });
 
-  testWidgets('finished', (tester) async {
-    final env = environment();
-    final queue = await pumpApp(tester, env);
-    await addVideos(tester, queue, files);
-    await tester.tap(find.text('Start'));
-    await tester.pump();
-    for (final bytes in [140000000, 190000000, 120000000, 160000000]) {
-      env.executor.last.finish(bytes: bytes);
-      await tester.pump();
-      await tester.pump();
-    }
-    await saveScreenshot(tester, '5_finished');
+  testWidgets('details', (tester) async {
+    final sources = await pumpApp(tester, environment());
+    await addVideos(tester, sources, files);
+    await tester.tap(find.byTooltip('More').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Video details'));
+    await tester.pumpAndSettle();
+    await saveScreenshot(tester, '4_details');
   });
 
   testWidgets('dark, Ukrainian', (tester) async {
-    final queue = await pumpApp(
+    final env = environment();
+    final sources = await pumpApp(
       tester,
-      environment(),
+      env,
       locale: const Locale('uk'),
       themeMode: ThemeMode.dark,
     );
-    await addVideos(tester, queue, files);
-    await saveScreenshot(tester, '6_dark_ukrainian');
-  });
-
-  testWidgets('narrow window', (tester) async {
-    final queue = await pumpApp(
-      tester,
-      environment(),
-      size: const Size(620, 900),
-    );
-    await addVideos(tester, queue, files.take(2));
-    await saveScreenshot(tester, '7_narrow');
-  });
-
-  testWidgets('command, explained', (tester) async {
-    final queue = await pumpApp(tester, environment());
-    await addVideos(tester, queue, ['/videos/birthday final export.mov']);
-    await tester.tap(find.byTooltip('More'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Show the command'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Explained'));
-    await tester.pumpAndSettle();
-    await saveScreenshot(tester, '8_command');
-  });
-
-  testWidgets('own goal for one video', (tester) async {
-    final queue = await pumpApp(tester, environment());
-    await addVideos(tester, queue, files);
-    await tester.tap(find.text('DSC_0413.MOV'));
+    await addVideos(tester, sources, files);
+    await tester.tap(find.text('Додати в чергу'));
     await tester.pump();
-    await tester.tap(find.text('Send to a phone'));
     await tester.pump();
-    await saveScreenshot(tester, '9_own_goal');
+    env.executor.last.report(0.6);
+    await tester.pump();
+    await saveScreenshot(tester, '5_dark_ukrainian');
   });
 }

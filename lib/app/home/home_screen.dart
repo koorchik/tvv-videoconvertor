@@ -1,24 +1,20 @@
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/platform/open_external.dart';
-import '../../core/queue/job_executor.dart';
 import '../../l10n/app_localizations.dart';
-import '../format.dart';
 import '../providers.dart';
 import '../queue/queue_controller.dart';
-import '../queue/queue_state.dart';
-import 'widgets/files_pane.dart';
-import 'widgets/task_pane.dart';
+import '../sources/sources_controller.dart';
+import 'widgets/queue_pane.dart';
+import 'widgets/recipe_pane.dart';
+import 'widgets/videos_pane.dart';
 
-/// The whole app on one screen: videos on the left, what to do with them on
-/// the right.
+/// The whole app on one screen: the videos above the queue on the left, and
+/// what to do with the selected videos on the right.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
-
-  /// Below this width the two panes are stacked instead of side by side.
-  static const _wideLayout = 900.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,112 +44,80 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _Workspace extends ConsumerWidget {
+class _Workspace extends ConsumerStatefulWidget {
   const _Workspace();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen(queueControllerProvider.select((s) => s.sample), (_, sample) {
-      if (sample != null && !sample.isRunning) {
-        _showSample(context, ref, sample);
-      }
-    });
+  ConsumerState<_Workspace> createState() => _WorkspaceState();
+}
+
+class _WorkspaceState extends ConsumerState<_Workspace> {
+  bool _dragging = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final sources = ref.read(sourcesProvider.notifier);
+    final queueEmpty = ref.watch(queueProvider.select((q) => q.jobs.isEmpty));
 
     return CallbackShortcuts(
       bindings: {
-        const SingleActivator(LogicalKeyboardKey.escape): ref
-            .read(queueControllerProvider.notifier)
-            .clearSelection,
+        const SingleActivator(LogicalKeyboardKey.escape):
+            sources.clearSelection,
+        const SingleActivator(LogicalKeyboardKey.keyA, control: true):
+            sources.selectAll,
+        const SingleActivator(LogicalKeyboardKey.keyA, meta: true):
+            sources.selectAll,
       },
-      child: Focus(autofocus: true, child: _layout()),
-    );
-  }
-
-  Widget _layout() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= HomeScreen._wideLayout;
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: wide
-              ? const Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: FilesPane()),
-                    SizedBox(width: 20),
-                    SizedBox(width: 400, child: TaskPane()),
-                  ],
-                )
-              : const Column(
-                  children: [
-                    Expanded(flex: 5, child: FilesPane()),
-                    SizedBox(height: 20),
-                    Expanded(flex: 6, child: TaskPane()),
-                  ],
-                ),
-        );
-      },
-    );
-  }
-
-  Future<void> _showSample(
-    BuildContext context,
-    WidgetRef ref,
-    SampleOutcome sample,
-  ) async {
-    final controller = ref.read(queueControllerProvider.notifier);
-    final result = sample.result!;
-    if (result.status == ConversionStatus.cancelled) {
-      controller.dismissSample();
-      return;
-    }
-    final l10n = AppLocalizations.of(context)!;
-    final format = Formatter(l10n);
-    final ok = result.status == ConversionStatus.done;
-    final original = ref
-        .read(queueControllerProvider)
-        .items
-        .where((i) => i.id == sample.itemId)
-        .firstOrNull;
-
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: Icon(
-          ok ? Icons.visibility_outlined : Icons.error_outline_rounded,
-          size: 32,
-        ),
-        title: Text(ok ? l10n.sampleReadyTitle : l10n.sampleFailed),
-        content: ok
-            ? Text(
-                l10n.sampleReadyBody(
-                  format.bytes(sample.estimatedFullBytes ?? 0),
-                  format.wait(sample.estimatedFullTime ?? Duration.zero),
-                ),
-              )
-            : null,
-        actionsAlignment: MainAxisAlignment.center,
-        actionsOverflowAlignment: OverflowBarAlignment.center,
-        actions: [
-          if (ok)
-            FilledButton.tonalIcon(
-              onPressed: () => openWithDefaultApp(result.outputPath!),
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: Text(l10n.playSample),
+      child: Focus(
+        autofocus: true,
+        // Files and folders can be dropped anywhere in the window, at any
+        // time, including while converting.
+        child: DropTarget(
+          onDragEntered: (_) => setState(() => _dragging = true),
+          onDragExited: (_) => setState(() => _dragging = false),
+          onDragDone: (details) {
+            setState(() => _dragging = false);
+            sources.addPaths(details.files.map((f) => f.path));
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: _dragging
+                  ? scheme.primaryContainer.withValues(alpha: 0.35)
+                  : Colors.transparent,
+              border: Border.all(
+                color: _dragging ? scheme.primary : Colors.transparent,
+                width: 2,
+              ),
             ),
-          if (ok && original != null)
-            OutlinedButton(
-              onPressed: () => openWithDefaultApp(original.path),
-              child: Text(l10n.playOriginal),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // An empty queue shrinks to its one line of
+                      // explanation and the videos take the room.
+                      Expanded(flex: 9, child: const VideosPane()),
+                      const SizedBox(height: 16),
+                      if (queueEmpty)
+                        const QueuePane()
+                      else
+                        const Expanded(flex: 11, child: QueuePane()),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20),
+                const SizedBox(width: 400, child: RecipePane()),
+              ],
             ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.close),
           ),
-        ],
+        ),
       ),
     );
-    controller.dismissSample();
   }
 }
 

@@ -10,6 +10,7 @@ class MediaInfo {
     this.video,
     this.audio = const [],
     this.tags = const {},
+    this.raw = const {},
   });
 
   final String path;
@@ -24,6 +25,9 @@ class MediaInfo {
   final VideoStream? video;
   final List<AudioStream> audio;
   final Map<String, String> tags;
+
+  /// ffprobe's complete report, for showing every detail of the file.
+  final Map<String, Object?> raw;
 
   bool get isMovFamily => _formats.contains('mov');
   bool get isMatroska => _formats.contains('matroska');

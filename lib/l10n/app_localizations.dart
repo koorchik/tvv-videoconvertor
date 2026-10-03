@@ -98,12 +98,6 @@ abstract class AppLocalizations {
     Locale('uk'),
   ];
 
-  /// Application name shown in the window title.
-  ///
-  /// In en, this message translates to:
-  /// **'TVV Video Converter'**
-  String get appTitle;
-
   /// No description provided for @dropZoneTitle.
   ///
   /// In en, this message translates to:
@@ -115,12 +109,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your original files are never changed.'**
   String get dropZoneHint;
-
-  /// No description provided for @dropHere.
-  ///
-  /// In en, this message translates to:
-  /// **'Drop to add'**
-  String get dropHere;
 
   /// No description provided for @addVideos.
   ///
@@ -145,12 +133,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear finished'**
   String get clearFinished;
-
-  /// No description provided for @goalTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'What do you want to do?'**
-  String get goalTitle;
 
   /// No description provided for @scenarioCompressTitle.
   ///
@@ -326,18 +308,6 @@ abstract class AppLocalizations {
   /// **'Use the default'**
   String get saveReset;
 
-  /// No description provided for @start.
-  ///
-  /// In en, this message translates to:
-  /// **'Start'**
-  String get start;
-
-  /// No description provided for @stop.
-  ///
-  /// In en, this message translates to:
-  /// **'Stop'**
-  String get stop;
-
   /// No description provided for @pause.
   ///
   /// In en, this message translates to:
@@ -349,12 +319,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue'**
   String get resume;
-
-  /// No description provided for @trySample.
-  ///
-  /// In en, this message translates to:
-  /// **'Try a 10-second sample'**
-  String get trySample;
 
   /// No description provided for @sampleFromStart.
   ///
@@ -434,24 +398,6 @@ abstract class AppLocalizations {
   /// **'Not a video file'**
   String get statusUnreadable;
 
-  /// No description provided for @statusPaused.
-  ///
-  /// In en, this message translates to:
-  /// **'Paused'**
-  String get statusPaused;
-
-  /// No description provided for @statusDone.
-  ///
-  /// In en, this message translates to:
-  /// **'Done'**
-  String get statusDone;
-
-  /// No description provided for @statusNothingToDo.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing to do'**
-  String get statusNothingToDo;
-
   /// No description provided for @statusFailed.
   ///
   /// In en, this message translates to:
@@ -470,24 +416,6 @@ abstract class AppLocalizations {
   /// **'Starting…'**
   String get statusStarting;
 
-  /// No description provided for @noteVariableFrameRate.
-  ///
-  /// In en, this message translates to:
-  /// **'Uneven frame timing will be fixed.'**
-  String get noteVariableFrameRate;
-
-  /// No description provided for @noteHevc422.
-  ///
-  /// In en, this message translates to:
-  /// **'This recording format only plays in Resolve with a recent NVIDIA card.'**
-  String get noteHevc422;
-
-  /// No description provided for @noteExperimentalAv1.
-  ///
-  /// In en, this message translates to:
-  /// **'Smallest files are harder to edit smoothly.'**
-  String get noteExperimentalAv1;
-
   /// No description provided for @progressLeft.
   ///
   /// In en, this message translates to:
@@ -499,12 +427,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'about {size}'**
   String aboutSize(String size);
-
-  /// No description provided for @sizeChange.
-  ///
-  /// In en, this message translates to:
-  /// **'{before} → {after}'**
-  String sizeChange(String before, String after);
 
   /// No description provided for @percentSmaller.
   ///
@@ -523,12 +445,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 video} other{{count} videos}}'**
   String videoCount(int count);
-
-  /// No description provided for @toConvertCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =0{Nothing to convert} =1{1 video to convert} other{{count} videos to convert}}'**
-  String toConvertCount(int count);
 
   /// No description provided for @convertingCount.
   ///
@@ -583,36 +499,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'KB'**
   String get unitKB;
-
-  /// No description provided for @sampleMaking.
-  ///
-  /// In en, this message translates to:
-  /// **'Making a short sample…'**
-  String get sampleMaking;
-
-  /// No description provided for @sampleReadyTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Sample ready'**
-  String get sampleReadyTitle;
-
-  /// No description provided for @sampleReadyBody.
-  ///
-  /// In en, this message translates to:
-  /// **'The whole video will be about {size} and take about {time}.'**
-  String sampleReadyBody(String size, String time);
-
-  /// No description provided for @sampleFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'The sample could not be made.'**
-  String get sampleFailed;
-
-  /// No description provided for @playSample.
-  ///
-  /// In en, this message translates to:
-  /// **'Play sample'**
-  String get playSample;
 
   /// No description provided for @playOriginal.
   ///
@@ -1004,24 +890,6 @@ abstract class AppLocalizations {
   /// **'Thorough rebuilds the picture and sound from scratch. It takes much longer and is the safest.'**
   String get modeThoroughHint;
 
-  /// No description provided for @noteHdrToneMapped.
-  ///
-  /// In en, this message translates to:
-  /// **'Very bright colours will be adjusted to look right on any screen.'**
-  String get noteHdrToneMapped;
-
-  /// No description provided for @noteHdrNotConverted.
-  ///
-  /// In en, this message translates to:
-  /// **'This video uses extra-bright colours that may look washed out on a phone.'**
-  String get noteHdrNotConverted;
-
-  /// No description provided for @noteAudioConvertedToFit.
-  ///
-  /// In en, this message translates to:
-  /// **'The sound will be converted to fit this file type.'**
-  String get noteAudioConvertedToFit;
-
   /// No description provided for @statusNoSound.
   ///
   /// In en, this message translates to:
@@ -1045,36 +913,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'takes about {time}'**
   String takesAbout(String time);
-
-  /// No description provided for @goalForSelected.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{What to do with the selected video?} other{What to do with the {count} selected videos?}}'**
-  String goalForSelected(int count);
-
-  /// No description provided for @backToAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Back to all videos'**
-  String get backToAll;
-
-  /// No description provided for @goalAppliesToAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Applies to all videos. Click a video to choose something different for it.'**
-  String get goalAppliesToAll;
-
-  /// No description provided for @addAgain.
-  ///
-  /// In en, this message translates to:
-  /// **'Add again for another goal'**
-  String get addAgain;
-
-  /// No description provided for @language.
-  ///
-  /// In en, this message translates to:
-  /// **'Language'**
-  String get language;
 
   /// No description provided for @languageSystem.
   ///
@@ -1111,6 +949,522 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'up to {lines}'**
   String techUpTo(String lines);
+
+  /// No description provided for @inQueueCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in queue'**
+  String inQueueCount(int count);
+
+  /// No description provided for @doneCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} done'**
+  String doneCount(int count);
+
+  /// No description provided for @videoDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Video details'**
+  String get videoDetails;
+
+  /// No description provided for @recipeTitleSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{What to do with the selected video} other{What to do with {count} selected videos}}'**
+  String recipeTitleSelected(int count);
+
+  /// No description provided for @recipeTitleNone.
+  ///
+  /// In en, this message translates to:
+  /// **'What to do'**
+  String get recipeTitleNone;
+
+  /// No description provided for @selectVideosHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select videos on the left to choose what to do with them.'**
+  String get selectVideosHint;
+
+  /// No description provided for @convertTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert'**
+  String get convertTitle;
+
+  /// No description provided for @convertWhole.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole video'**
+  String get convertWhole;
+
+  /// No description provided for @convertSample.
+  ///
+  /// In en, this message translates to:
+  /// **'10-second sample'**
+  String get convertSample;
+
+  /// No description provided for @addToQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to queue'**
+  String get addToQueue;
+
+  /// No description provided for @addAllToQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Add all ({count})'**
+  String addAllToQueue(int count);
+
+  /// No description provided for @alreadyQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in the queue'**
+  String get alreadyQueued;
+
+  /// No description provided for @samplesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 sample of 10 seconds} other{{count} samples of 10 seconds}}'**
+  String samplesCount(int count);
+
+  /// No description provided for @queueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Queue'**
+  String get queueTitle;
+
+  /// No description provided for @queueEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose videos and what to do, then press Add to queue. Converting starts by itself.'**
+  String get queueEmpty;
+
+  /// No description provided for @queuePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get queuePaused;
+
+  /// No description provided for @jobWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get jobWaiting;
+
+  /// No description provided for @pausedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused at {percent}%'**
+  String pausedAt(int percent);
+
+  /// No description provided for @jobSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to do: already right'**
+  String get jobSkipped;
+
+  /// No description provided for @sampleChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample 10 s'**
+  String get sampleChip;
+
+  /// No description provided for @sampleResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample {size} · whole video about {fullSize}, about {time}'**
+  String sampleResult(String size, String fullSize, String time);
+
+  /// No description provided for @tookTime.
+  ///
+  /// In en, this message translates to:
+  /// **'took {time}'**
+  String tookTime(String time);
+
+  /// No description provided for @play.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get play;
+
+  /// No description provided for @convertWholeVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert whole video'**
+  String get convertWholeVideo;
+
+  /// No description provided for @originalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details of the original'**
+  String get originalDetails;
+
+  /// No description provided for @resultDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details of the result'**
+  String get resultDetails;
+
+  /// No description provided for @useSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Use these settings'**
+  String get useSettings;
+
+  /// No description provided for @removeFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from list'**
+  String get removeFromList;
+
+  /// No description provided for @detailsViewEncoding.
+  ///
+  /// In en, this message translates to:
+  /// **'Encoding'**
+  String get detailsViewEncoding;
+
+  /// No description provided for @detailsViewMetadata.
+  ///
+  /// In en, this message translates to:
+  /// **'All metadata'**
+  String get detailsViewMetadata;
+
+  /// No description provided for @detailsViewReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Full report'**
+  String get detailsViewReport;
+
+  /// No description provided for @noTags.
+  ///
+  /// In en, this message translates to:
+  /// **'No tags'**
+  String get noTags;
+
+  /// No description provided for @groupFile.
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get groupFile;
+
+  /// No description provided for @groupVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video track {number}'**
+  String groupVideo(int number);
+
+  /// No description provided for @groupAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio track {number}'**
+  String groupAudio(int number);
+
+  /// No description provided for @groupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtitles {number}'**
+  String groupSubtitle(int number);
+
+  /// No description provided for @groupTimecode.
+  ///
+  /// In en, this message translates to:
+  /// **'Timecode'**
+  String get groupTimecode;
+
+  /// No description provided for @groupData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data track {number}'**
+  String groupData(int number);
+
+  /// No description provided for @groupAttachment.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment {number}'**
+  String groupAttachment(int number);
+
+  /// No description provided for @groupChapters.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapters'**
+  String get groupChapters;
+
+  /// No description provided for @groupChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapter {number}'**
+  String groupChapter(int number);
+
+  /// No description provided for @fieldContainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Container'**
+  String get fieldContainer;
+
+  /// No description provided for @fieldSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get fieldSize;
+
+  /// No description provided for @fieldDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get fieldDuration;
+
+  /// No description provided for @fieldBitrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Bitrate'**
+  String get fieldBitrate;
+
+  /// No description provided for @fieldTracks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracks'**
+  String get fieldTracks;
+
+  /// No description provided for @fieldCodec.
+  ///
+  /// In en, this message translates to:
+  /// **'Codec'**
+  String get fieldCodec;
+
+  /// No description provided for @fieldResolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution'**
+  String get fieldResolution;
+
+  /// No description provided for @fieldAspectRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Aspect ratio'**
+  String get fieldAspectRatio;
+
+  /// No description provided for @fieldFrameRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Frame rate'**
+  String get fieldFrameRate;
+
+  /// No description provided for @fieldBitDepth.
+  ///
+  /// In en, this message translates to:
+  /// **'Bit depth'**
+  String get fieldBitDepth;
+
+  /// No description provided for @fieldChroma.
+  ///
+  /// In en, this message translates to:
+  /// **'Chroma subsampling'**
+  String get fieldChroma;
+
+  /// No description provided for @fieldPixelFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Pixel format'**
+  String get fieldPixelFormat;
+
+  /// No description provided for @fieldColorPrimaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour primaries'**
+  String get fieldColorPrimaries;
+
+  /// No description provided for @fieldColorTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer'**
+  String get fieldColorTransfer;
+
+  /// No description provided for @fieldColorMatrix.
+  ///
+  /// In en, this message translates to:
+  /// **'Matrix'**
+  String get fieldColorMatrix;
+
+  /// No description provided for @fieldColorRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Range'**
+  String get fieldColorRange;
+
+  /// No description provided for @fieldHdr.
+  ///
+  /// In en, this message translates to:
+  /// **'HDR'**
+  String get fieldHdr;
+
+  /// No description provided for @fieldMasteringDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastering display'**
+  String get fieldMasteringDisplay;
+
+  /// No description provided for @fieldLightLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Light level'**
+  String get fieldLightLevel;
+
+  /// No description provided for @fieldScanType.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan type'**
+  String get fieldScanType;
+
+  /// No description provided for @fieldRotation.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotation'**
+  String get fieldRotation;
+
+  /// No description provided for @fieldFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'Frames'**
+  String get fieldFrames;
+
+  /// No description provided for @fieldChannels.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels'**
+  String get fieldChannels;
+
+  /// No description provided for @fieldSampleRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample rate'**
+  String get fieldSampleRate;
+
+  /// No description provided for @fieldSampleFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample format'**
+  String get fieldSampleFormat;
+
+  /// No description provided for @fieldLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get fieldLanguage;
+
+  /// No description provided for @fieldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get fieldTitle;
+
+  /// No description provided for @fieldDefaultTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Default track'**
+  String get fieldDefaultTrack;
+
+  /// No description provided for @fieldTimecode.
+  ///
+  /// In en, this message translates to:
+  /// **'Timecode'**
+  String get fieldTimecode;
+
+  /// No description provided for @fieldFileName.
+  ///
+  /// In en, this message translates to:
+  /// **'File name'**
+  String get fieldFileName;
+
+  /// No description provided for @fieldChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapter'**
+  String get fieldChapter;
+
+  /// No description provided for @noteVariable.
+  ///
+  /// In en, this message translates to:
+  /// **'variable'**
+  String get noteVariable;
+
+  /// No description provided for @noteProgressive.
+  ///
+  /// In en, this message translates to:
+  /// **'progressive'**
+  String get noteProgressive;
+
+  /// No description provided for @noteInterlaced.
+  ///
+  /// In en, this message translates to:
+  /// **'interlaced'**
+  String get noteInterlaced;
+
+  /// No description provided for @noteNotStated.
+  ///
+  /// In en, this message translates to:
+  /// **'not stated'**
+  String get noteNotStated;
+
+  /// No description provided for @noteYes.
+  ///
+  /// In en, this message translates to:
+  /// **'yes'**
+  String get noteYes;
+
+  /// No description provided for @noteNo.
+  ///
+  /// In en, this message translates to:
+  /// **'no'**
+  String get noteNo;
+
+  /// Application name shown in the window title.
+  ///
+  /// In en, this message translates to:
+  /// **'TVV Video Converter'**
+  String get appTitle;
+
+  /// No description provided for @noteVariableFrameRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Uneven frame timing will be fixed.'**
+  String get noteVariableFrameRate;
+
+  /// No description provided for @noteHevc422.
+  ///
+  /// In en, this message translates to:
+  /// **'This recording format only plays in Resolve with a recent NVIDIA card.'**
+  String get noteHevc422;
+
+  /// No description provided for @noteExperimentalAv1.
+  ///
+  /// In en, this message translates to:
+  /// **'Smallest files are harder to edit smoothly.'**
+  String get noteExperimentalAv1;
+
+  /// No description provided for @noteHdrToneMapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Very bright colours will be adjusted to look right on any screen.'**
+  String get noteHdrToneMapped;
+
+  /// No description provided for @noteHdrNotConverted.
+  ///
+  /// In en, this message translates to:
+  /// **'This video uses extra-bright colours that may look washed out on a phone.'**
+  String get noteHdrNotConverted;
+
+  /// No description provided for @noteAudioConvertedToFit.
+  ///
+  /// In en, this message translates to:
+  /// **'The sound will be converted to fit this file type.'**
+  String get noteAudioConvertedToFit;
+
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get selectAll;
 }
 
 class _AppLocalizationsDelegate

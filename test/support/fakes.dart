@@ -28,6 +28,7 @@ class FakeFfprobe implements Ffprobe {
       sizeBytes: info.sizeBytes,
       video: info.video,
       audio: info.audio,
+      raw: info.raw,
     );
   }
 

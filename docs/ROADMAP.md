@@ -8,12 +8,14 @@
 - **Goals:** "Make it small" (HEVC, AV1, graphics card), "Edit in DaVinci
   Resolve" on Linux (Studio and free), "Send to a phone", "Get the sound",
   "Remove personal details" and "Change file type".
-- **UI:** one screen, live-editable queue, a goal per video or one for all,
-  expected size and time before starting (measured from samples), progress
-  with time left, 10-second sample, keep-awake on Linux and macOS, "Show the
-  command", "More options", technical names beside plain labels, English and
-  Ukrainian with a switcher, light and dark. Language, last goal and output
-  folder are remembered.
+- **UI:** videos, settings and queue as separate parts; the queue starts by
+  itself and can be paused, reordered and edited; the same video can be
+  queued with different settings, and output names carry the settings;
+  samples are an option and report the whole video's expected size; expected
+  size and time before starting; video details for originals and results;
+  keep-awake on Linux and macOS; "Show the command"; technical names beside
+  plain labels; English and Ukrainian with a switcher; light and dark.
+  Language, last goal and output folder are remembered.
 - **CI:** analysis, tests and release builds for Linux, Windows and macOS.
 
 ## Next

@@ -10,16 +10,10 @@ class AppLocalizationsUk extends AppLocalizations {
   AppLocalizationsUk([String locale = 'uk']) : super(locale);
 
   @override
-  String get appTitle => 'TVV Відеоконвертер';
-
-  @override
   String get dropZoneTitle => 'Перетягніть сюди відео або папки';
 
   @override
   String get dropZoneHint => 'Оригінальні файли ніколи не змінюються.';
-
-  @override
-  String get dropHere => 'Відпустіть, щоб додати';
 
   @override
   String get addVideos => 'Додати відео';
@@ -32,9 +26,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get clearFinished => 'Прибрати готові';
-
-  @override
-  String get goalTitle => 'Що потрібно зробити?';
 
   @override
   String get scenarioCompressTitle => 'Зменшити розмір';
@@ -132,19 +123,10 @@ class AppLocalizationsUk extends AppLocalizations {
   String get saveReset => 'Як за замовчуванням';
 
   @override
-  String get start => 'Почати';
-
-  @override
-  String get stop => 'Зупинити';
-
-  @override
   String get pause => 'Пауза';
 
   @override
   String get resume => 'Продовжити';
-
-  @override
-  String get trySample => 'Спробувати на 10 секундах';
 
   @override
   String get sampleFromStart => 'З початку';
@@ -186,15 +168,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get statusUnreadable => 'Це не відеофайл';
 
   @override
-  String get statusPaused => 'Пауза';
-
-  @override
-  String get statusDone => 'Готово';
-
-  @override
-  String get statusNothingToDo => 'Нічого робити не треба';
-
-  @override
   String get statusFailed => 'Не вдалося конвертувати';
 
   @override
@@ -204,17 +177,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get statusStarting => 'Запуск…';
 
   @override
-  String get noteVariableFrameRate =>
-      'Нерівномірну частоту кадрів буде виправлено.';
-
-  @override
-  String get noteHevc422 =>
-      'Цей формат запису відтворюється в Resolve лише з новою відеокартою NVIDIA.';
-
-  @override
-  String get noteExperimentalAv1 => 'Найменші файли важче плавно монтувати.';
-
-  @override
   String progressLeft(String time) {
     return 'залишилось $time';
   }
@@ -222,11 +184,6 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String aboutSize(String size) {
     return 'приблизно $size';
-  }
-
-  @override
-  String sizeChange(String before, String after) {
-    return '$before → $after';
   }
 
   @override
@@ -248,20 +205,6 @@ class AppLocalizationsUk extends AppLocalizations {
       many: '$count відео',
       few: '$count відео',
       one: '$count відео',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String toConvertCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count відео до конвертації',
-      many: '$count відео до конвертації',
-      few: '$count відео до конвертації',
-      one: '$count відео до конвертації',
-      zero: 'Нічого конвертувати',
     );
     return '$_temp0';
   }
@@ -302,23 +245,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get unitKB => 'КБ';
-
-  @override
-  String get sampleMaking => 'Готуємо короткий зразок…';
-
-  @override
-  String get sampleReadyTitle => 'Зразок готовий';
-
-  @override
-  String sampleReadyBody(String size, String time) {
-    return 'Усе відео займатиме приблизно $size, конвертація триватиме приблизно $time.';
-  }
-
-  @override
-  String get sampleFailed => 'Не вдалося зробити зразок.';
-
-  @override
-  String get playSample => 'Переглянути зразок';
 
   @override
   String get playOriginal => 'Переглянути оригінал';
@@ -528,18 +454,6 @@ class AppLocalizationsUk extends AppLocalizations {
       'Ретельний режим заново створює зображення і звук. Це значно довше, але найнадійніше.';
 
   @override
-  String get noteHdrToneMapped =>
-      'Дуже яскраві кольори буде пристосовано, щоб відео гарно виглядало на будь-якому екрані.';
-
-  @override
-  String get noteHdrNotConverted =>
-      'У цьому відео надяскраві кольори, які на телефоні можуть виглядати блідо.';
-
-  @override
-  String get noteAudioConvertedToFit =>
-      'Звук буде перетворено, щоб він підходив до цього типу файлу.';
-
-  @override
   String get statusNoSound => 'У цьому файлі немає звуку';
 
   @override
@@ -552,30 +466,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String takesAbout(String time) {
     return 'триватиме приблизно $time';
   }
-
-  @override
-  String goalForSelected(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Що зробити з вибраними відео ($count)?',
-      one: 'Що зробити з вибраним відео?',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get backToAll => 'Назад до всіх відео';
-
-  @override
-  String get goalAppliesToAll =>
-      'Застосовується до всіх відео. Клацніть відео, щоб вибрати для нього щось інше.';
-
-  @override
-  String get addAgain => 'Додати ще раз для іншої дії';
-
-  @override
-  String get language => 'Мова';
 
   @override
   String get languageSystem => 'Як на комп’ютері';
@@ -596,4 +486,313 @@ class AppLocalizationsUk extends AppLocalizations {
   String techUpTo(String lines) {
     return 'до $lines';
   }
+
+  @override
+  String inQueueCount(int count) {
+    return 'у черзі: $count';
+  }
+
+  @override
+  String doneCount(int count) {
+    return 'готово: $count';
+  }
+
+  @override
+  String get videoDetails => 'Відомості про відео';
+
+  @override
+  String recipeTitleSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Що зробити з $count вибраними відео',
+      many: 'Що зробити з $count вибраними відео',
+      few: 'Що зробити з $count вибраними відео',
+      one: 'Що зробити з $count вибраним відео',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recipeTitleNone => 'Що зробити';
+
+  @override
+  String get selectVideosHint =>
+      'Виберіть відео ліворуч, щоб вирішити, що з ними зробити.';
+
+  @override
+  String get convertTitle => 'Конвертувати';
+
+  @override
+  String get convertWhole => 'Усе відео';
+
+  @override
+  String get convertSample => 'Зразок 10 секунд';
+
+  @override
+  String get addToQueue => 'Додати в чергу';
+
+  @override
+  String addAllToQueue(int count) {
+    return 'Додати всі ($count)';
+  }
+
+  @override
+  String get alreadyQueued => 'Уже в черзі';
+
+  @override
+  String samplesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count зразка по 10 секунд',
+      many: '$count зразків по 10 секунд',
+      few: '$count зразки по 10 секунд',
+      one: '$count зразок по 10 секунд',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get queueTitle => 'Черга';
+
+  @override
+  String get queueEmpty =>
+      'Виберіть відео і що з ними зробити, потім натисніть «Додати в чергу». Конвертація почнеться сама.';
+
+  @override
+  String get queuePaused => 'Призупинено';
+
+  @override
+  String get jobWaiting => 'Очікує';
+
+  @override
+  String pausedAt(int percent) {
+    return 'Призупинено на $percent%';
+  }
+
+  @override
+  String get jobSkipped => 'Нічого робити: уже як треба';
+
+  @override
+  String get sampleChip => 'Зразок 10 с';
+
+  @override
+  String sampleResult(String size, String fullSize, String time) {
+    return 'Зразок $size · усе відео приблизно $fullSize, приблизно $time';
+  }
+
+  @override
+  String tookTime(String time) {
+    return 'тривало $time';
+  }
+
+  @override
+  String get play => 'Відтворити';
+
+  @override
+  String get convertWholeVideo => 'Конвертувати все відео';
+
+  @override
+  String get originalDetails => 'Відомості про оригінал';
+
+  @override
+  String get resultDetails => 'Відомості про результат';
+
+  @override
+  String get useSettings => 'Використати ці налаштування';
+
+  @override
+  String get removeFromList => 'Прибрати зі списку';
+
+  @override
+  String get detailsViewEncoding => 'Кодування';
+
+  @override
+  String get detailsViewMetadata => 'Усі метадані';
+
+  @override
+  String get detailsViewReport => 'Повний звіт';
+
+  @override
+  String get noTags => 'Немає тегів';
+
+  @override
+  String get groupFile => 'Файл';
+
+  @override
+  String groupVideo(int number) {
+    return 'Відеодоріжка $number';
+  }
+
+  @override
+  String groupAudio(int number) {
+    return 'Аудіодоріжка $number';
+  }
+
+  @override
+  String groupSubtitle(int number) {
+    return 'Субтитри $number';
+  }
+
+  @override
+  String get groupTimecode => 'Таймкод';
+
+  @override
+  String groupData(int number) {
+    return 'Доріжка даних $number';
+  }
+
+  @override
+  String groupAttachment(int number) {
+    return 'Вкладення $number';
+  }
+
+  @override
+  String get groupChapters => 'Розділи';
+
+  @override
+  String groupChapter(int number) {
+    return 'Розділ $number';
+  }
+
+  @override
+  String get fieldContainer => 'Контейнер';
+
+  @override
+  String get fieldSize => 'Розмір';
+
+  @override
+  String get fieldDuration => 'Тривалість';
+
+  @override
+  String get fieldBitrate => 'Бітрейт';
+
+  @override
+  String get fieldTracks => 'Доріжок';
+
+  @override
+  String get fieldCodec => 'Кодек';
+
+  @override
+  String get fieldResolution => 'Роздільна здатність';
+
+  @override
+  String get fieldAspectRatio => 'Співвідношення сторін';
+
+  @override
+  String get fieldFrameRate => 'Частота кадрів';
+
+  @override
+  String get fieldBitDepth => 'Глибина кольору';
+
+  @override
+  String get fieldChroma => 'Субдискретизація кольору';
+
+  @override
+  String get fieldPixelFormat => 'Формат пікселів';
+
+  @override
+  String get fieldColorPrimaries => 'Основні кольори';
+
+  @override
+  String get fieldColorTransfer => 'Передавальна функція';
+
+  @override
+  String get fieldColorMatrix => 'Матриця';
+
+  @override
+  String get fieldColorRange => 'Діапазон';
+
+  @override
+  String get fieldHdr => 'HDR';
+
+  @override
+  String get fieldMasteringDisplay => 'Дисплей мастерингу';
+
+  @override
+  String get fieldLightLevel => 'Рівень світла';
+
+  @override
+  String get fieldScanType => 'Розгортка';
+
+  @override
+  String get fieldRotation => 'Поворот';
+
+  @override
+  String get fieldFrames => 'Кадрів';
+
+  @override
+  String get fieldChannels => 'Канали';
+
+  @override
+  String get fieldSampleRate => 'Частота дискретизації';
+
+  @override
+  String get fieldSampleFormat => 'Формат відліків';
+
+  @override
+  String get fieldLanguage => 'Мова';
+
+  @override
+  String get fieldTitle => 'Назва';
+
+  @override
+  String get fieldDefaultTrack => 'Типова доріжка';
+
+  @override
+  String get fieldTimecode => 'Таймкод';
+
+  @override
+  String get fieldFileName => 'Ім’я файлу';
+
+  @override
+  String get fieldChapter => 'Розділ';
+
+  @override
+  String get noteVariable => 'змінна';
+
+  @override
+  String get noteProgressive => 'прогресивна';
+
+  @override
+  String get noteInterlaced => 'черезрядкова';
+
+  @override
+  String get noteNotStated => 'не вказано';
+
+  @override
+  String get noteYes => 'так';
+
+  @override
+  String get noteNo => 'ні';
+
+  @override
+  String get appTitle => 'TVV Відеоконвертер';
+
+  @override
+  String get noteVariableFrameRate =>
+      'Нерівномірну частоту кадрів буде виправлено.';
+
+  @override
+  String get noteHevc422 =>
+      'Цей формат запису відтворюється в Resolve лише з новою відеокартою NVIDIA.';
+
+  @override
+  String get noteExperimentalAv1 => 'Найменші файли важче плавно монтувати.';
+
+  @override
+  String get noteHdrToneMapped =>
+      'Дуже яскраві кольори буде пристосовано, щоб відео гарно виглядало на будь-якому екрані.';
+
+  @override
+  String get noteHdrNotConverted =>
+      'У цьому відео надяскраві кольори, які на телефоні можуть виглядати блідо.';
+
+  @override
+  String get noteAudioConvertedToFit =>
+      'Звук буде перетворено, щоб він підходив до цього типу файлу.';
+
+  @override
+  String get selectAll => 'Вибрати всі';
 }

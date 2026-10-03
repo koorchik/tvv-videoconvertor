@@ -12,14 +12,14 @@ import 'package:tvv_videoconvertor/app/home/technical_text.dart';
 import 'package:tvv_videoconvertor/app/providers.dart';
 import 'package:tvv_videoconvertor/app/settings.dart';
 import 'package:tvv_videoconvertor/core/settings/settings_store.dart';
-import 'package:tvv_videoconvertor/app/queue/queue_controller.dart';
+import 'package:tvv_videoconvertor/app/sources/sources_controller.dart';
 
 import 'fakes.dart';
 
 const _screenshotKey = ValueKey('screenshot');
 
 /// Starts the app against a [FakeEnvironment] in a window of [size].
-Future<QueueController> pumpApp(
+Future<SourcesController> pumpApp(
   WidgetTester tester,
   FakeEnvironment env, {
   Locale? locale = const Locale('en'),
@@ -49,17 +49,17 @@ Future<QueueController> pumpApp(
   );
   await container.read(environmentProvider.future);
   await tester.pump();
-  return container.read(queueControllerProvider.notifier);
+  return container.read(sourcesProvider.notifier);
 }
 
 /// Adds files to the list. Checking whether a path is a folder is real disk
 /// access, which only completes outside the test's simulated clock.
 Future<void> addVideos(
   WidgetTester tester,
-  QueueController queue,
+  SourcesController sources,
   Iterable<String> paths,
 ) async {
-  await tester.runAsync(() => queue.addPaths(paths));
+  await tester.runAsync(() => sources.addPaths(paths));
   await tester.pump();
 }
 

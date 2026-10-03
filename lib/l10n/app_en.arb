@@ -1,22 +1,15 @@
 {
   "@@locale": "en",
-  "appTitle": "TVV Video Converter",
-  "@appTitle": {"description": "Application name shown in the window title."},
-
   "dropZoneTitle": "Drop videos or folders here",
   "dropZoneHint": "Your original files are never changed.",
-  "dropHere": "Drop to add",
   "addVideos": "Add videos",
   "addFolder": "Add folder",
   "yourVideos": "Your videos",
   "clearFinished": "Clear finished",
-
-  "goalTitle": "What do you want to do?",
   "scenarioCompressTitle": "Make it small",
   "scenarioCompressHint": "Looks the same, takes far less space. Good for keeping and for Google Photos.",
   "scenarioResolveTitle": "Edit in DaVinci Resolve",
   "scenarioResolveHint": "Makes videos open with picture and sound in Resolve on Linux.",
-
   "presetCompressHevc": "Works everywhere",
   "presetCompressHevcHint": "Plays on phones, TVs, computers and Google Photos.",
   "presetCompressAv1": "Smallest file",
@@ -27,7 +20,6 @@
   "presetResolveStudioHint": "Usually only the sound needs fixing, which takes seconds.",
   "presetResolveFree": "Free Resolve",
   "presetResolveFreeHint": "The picture is converted too. Files become much larger.",
-
   "qualityTitle": "Quality",
   "qualityCompact": "Smaller file",
   "qualityHigh": "Recommended",
@@ -39,17 +31,12 @@
   "sizeBest": "Best quality",
   "convertVideoTitle": "Also convert the picture",
   "convertVideoHint": "Turn on if videos play choppily or show no picture. Needed without an NVIDIA graphics card.",
-
   "saveTitle": "Where to save",
   "saveNextToOriginals": "Next to the originals, in a “Converted” folder",
   "saveChooseFolder": "Change…",
   "saveReset": "Use the default",
-
-  "start": "Start",
-  "stop": "Stop",
   "pause": "Pause",
   "resume": "Continue",
-  "trySample": "Try a 10-second sample",
   "sampleFromStart": "From the beginning",
   "sampleFromMiddle": "From the middle",
   "remove": "Remove",
@@ -57,73 +44,118 @@
   "retry": "Try again",
   "showInFolder": "Show in folder",
   "dragToReorder": "Drag to change the order",
-
   "statusChecking": "Checking…",
   "statusReadyAsIs": "Ready as is",
   "statusQuickFix": "Quick, the picture stays untouched",
   "statusFullConversion": "Will be converted",
   "statusUnsupported": "No picture in this file",
   "statusUnreadable": "Not a video file",
-  "statusPaused": "Paused",
-  "statusDone": "Done",
-  "statusNothingToDo": "Nothing to do",
   "statusFailed": "Could not convert",
   "statusCancelled": "Cancelled",
   "statusStarting": "Starting…",
-
-  "noteVariableFrameRate": "Uneven frame timing will be fixed.",
-  "noteHevc422": "This recording format only plays in Resolve with a recent NVIDIA card.",
-  "noteExperimentalAv1": "Smallest files are harder to edit smoothly.",
-
   "progressLeft": "{time} left",
-  "@progressLeft": {"placeholders": {"time": {"type": "String"}}},
+  "@progressLeft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "aboutSize": "about {size}",
-  "@aboutSize": {"placeholders": {"size": {"type": "String"}}},
-  "sizeChange": "{before} → {after}",
-  "@sizeChange": {"placeholders": {"before": {"type": "String"}, "after": {"type": "String"}}},
+  "@aboutSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "percentSmaller": "{percent}% smaller",
-  "@percentSmaller": {"placeholders": {"percent": {"type": "int"}}},
+  "@percentSmaller": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "percentLarger": "{percent}% larger",
-  "@percentLarger": {"placeholders": {"percent": {"type": "int"}}},
+  "@percentLarger": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "videoCount": "{count, plural, =1{1 video} other{{count} videos}}",
-  "@videoCount": {"placeholders": {"count": {"type": "int"}}},
-  "toConvertCount": "{count, plural, =0{Nothing to convert} =1{1 video to convert} other{{count} videos to convert}}",
-  "@toConvertCount": {"placeholders": {"count": {"type": "int"}}},
+  "@videoCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "convertingCount": "Converting {current} of {total}",
-  "@convertingCount": {"placeholders": {"current": {"type": "int"}, "total": {"type": "int"}}},
+  "@convertingCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "allDone": "All done",
   "savedSummary": "{before} became {after}",
-  "@savedSummary": {"placeholders": {"before": {"type": "String"}, "after": {"type": "String"}}},
-
+  "@savedSummary": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
   "durationSeconds": "{seconds} s",
-  "@durationSeconds": {"placeholders": {"seconds": {"type": "int"}}},
+  "@durationSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "durationMinutes": "{minutes} min",
-  "@durationMinutes": {"placeholders": {"minutes": {"type": "int"}}},
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "durationHours": "{hours} h {minutes} min",
-  "@durationHours": {"placeholders": {"hours": {"type": "int"}, "minutes": {"type": "int"}}},
+  "@durationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "unitGB": "GB",
   "unitMB": "MB",
   "unitKB": "KB",
-
-  "sampleMaking": "Making a short sample…",
-  "sampleReadyTitle": "Sample ready",
-  "sampleReadyBody": "The whole video will be about {size} and take about {time}.",
-  "@sampleReadyBody": {"placeholders": {"size": {"type": "String"}, "time": {"type": "String"}}},
-  "sampleFailed": "The sample could not be made.",
-  "playSample": "Play sample",
   "playOriginal": "Play original",
   "close": "Close",
   "details": "Details",
-
   "engineMissingTitle": "The video engine is missing",
   "engineMissingBody": "This app needs FFmpeg to convert videos, and could not find it. Install FFmpeg and start the app again.",
   "startingUp": "Getting ready…",
-
   "quitTitle": "Stop converting and quit?",
   "quitBody": "The video being converted will be discarded. Finished videos are kept.",
   "quit": "Quit",
   "keepConverting": "Keep converting",
-
   "more": "More",
   "showCommand": "Show the command",
   "commandTitle": "The command for this video",
@@ -162,7 +194,6 @@
   "cmdFastStart": "Put the index first, so playback can start while downloading",
   "cmdContainer": "File type of the result",
   "cmdOutput": "Where the result is written",
-
   "scenarioShareTitle": "Send to a phone",
   "scenarioShareHint": "Small and plays on any phone, in Telegram and other messengers. In Telegram, send it as a file to keep this quality.",
   "scenarioAudioTitle": "Get the sound",
@@ -180,29 +211,221 @@
   "modeQuick": "Quick",
   "modeThorough": "Thorough",
   "modeThoroughHint": "Thorough rebuilds the picture and sound from scratch. It takes much longer and is the safest.",
-  "noteHdrToneMapped": "Very bright colours will be adjusted to look right on any screen.",
-  "noteHdrNotConverted": "This video uses extra-bright colours that may look washed out on a phone.",
-  "noteAudioConvertedToFit": "The sound will be converted to fit this file type.",
   "statusNoSound": "No sound in this file",
   "statusCannotHold": "This file type cannot hold this video",
-
   "estimating": "measuring size…",
   "takesAbout": "takes about {time}",
-  "@takesAbout": {"placeholders": {"time": {"type": "String"}}},
-
-  "goalForSelected": "{count, plural, =1{What to do with the selected video?} other{What to do with the {count} selected videos?}}",
-  "@goalForSelected": {"placeholders": {"count": {"type": "int"}}},
-  "backToAll": "Back to all videos",
-  "goalAppliesToAll": "Applies to all videos. Click a video to choose something different for it.",
-  "addAgain": "Add again for another goal",
-
-  "language": "Language",
+  "@takesAbout": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "languageSystem": "Same as the computer",
-
   "techPictureCopied": "picture copied as is",
   "techSoundCopied": "sound copied as is",
   "techNoSound": "no sound",
   "techNoReencode": "no re-encoding",
   "techUpTo": "up to {lines}",
-  "@techUpTo": {"placeholders": {"lines": {"type": "String"}}}
+  "@techUpTo": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  },
+  "inQueueCount": "{count} in queue",
+  "@inQueueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "doneCount": "{count} done",
+  "@doneCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "videoDetails": "Video details",
+  "recipeTitleSelected": "{count, plural, =1{What to do with the selected video} other{What to do with {count} selected videos}}",
+  "@recipeTitleSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recipeTitleNone": "What to do",
+  "selectVideosHint": "Select videos on the left to choose what to do with them.",
+  "convertTitle": "Convert",
+  "convertWhole": "Whole video",
+  "convertSample": "10-second sample",
+  "addToQueue": "Add to queue",
+  "addAllToQueue": "Add all ({count})",
+  "@addAllToQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "alreadyQueued": "Already in the queue",
+  "samplesCount": "{count, plural, =1{1 sample of 10 seconds} other{{count} samples of 10 seconds}}",
+  "@samplesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueTitle": "Queue",
+  "queueEmpty": "Choose videos and what to do, then press Add to queue. Converting starts by itself.",
+  "queuePaused": "Paused",
+  "jobWaiting": "Waiting",
+  "pausedAt": "Paused at {percent}%",
+  "@pausedAt": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "jobSkipped": "Nothing to do: already right",
+  "sampleChip": "Sample 10 s",
+  "sampleResult": "Sample {size} · whole video about {fullSize}, about {time}",
+  "@sampleResult": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "fullSize": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "tookTime": "took {time}",
+  "@tookTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "play": "Play",
+  "convertWholeVideo": "Convert whole video",
+  "originalDetails": "Details of the original",
+  "resultDetails": "Details of the result",
+  "useSettings": "Use these settings",
+  "removeFromList": "Remove from list",
+  "detailsViewEncoding": "Encoding",
+  "detailsViewMetadata": "All metadata",
+  "detailsViewReport": "Full report",
+  "noTags": "No tags",
+  "groupFile": "File",
+  "groupVideo": "Video track {number}",
+  "@groupVideo": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "groupAudio": "Audio track {number}",
+  "@groupAudio": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "groupSubtitle": "Subtitles {number}",
+  "@groupSubtitle": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "groupTimecode": "Timecode",
+  "groupData": "Data track {number}",
+  "@groupData": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "groupAttachment": "Attachment {number}",
+  "@groupAttachment": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "groupChapters": "Chapters",
+  "groupChapter": "Chapter {number}",
+  "@groupChapter": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "fieldContainer": "Container",
+  "fieldSize": "Size",
+  "fieldDuration": "Duration",
+  "fieldBitrate": "Bitrate",
+  "fieldTracks": "Tracks",
+  "fieldCodec": "Codec",
+  "fieldResolution": "Resolution",
+  "fieldAspectRatio": "Aspect ratio",
+  "fieldFrameRate": "Frame rate",
+  "fieldBitDepth": "Bit depth",
+  "fieldChroma": "Chroma subsampling",
+  "fieldPixelFormat": "Pixel format",
+  "fieldColorPrimaries": "Colour primaries",
+  "fieldColorTransfer": "Transfer",
+  "fieldColorMatrix": "Matrix",
+  "fieldColorRange": "Range",
+  "fieldHdr": "HDR",
+  "fieldMasteringDisplay": "Mastering display",
+  "fieldLightLevel": "Light level",
+  "fieldScanType": "Scan type",
+  "fieldRotation": "Rotation",
+  "fieldFrames": "Frames",
+  "fieldChannels": "Channels",
+  "fieldSampleRate": "Sample rate",
+  "fieldSampleFormat": "Sample format",
+  "fieldLanguage": "Language",
+  "fieldTitle": "Title",
+  "fieldDefaultTrack": "Default track",
+  "fieldTimecode": "Timecode",
+  "fieldFileName": "File name",
+  "fieldChapter": "Chapter",
+  "noteVariable": "variable",
+  "noteProgressive": "progressive",
+  "noteInterlaced": "interlaced",
+  "noteNotStated": "not stated",
+  "noteYes": "yes",
+  "noteNo": "no",
+  "appTitle": "TVV Video Converter",
+  "@appTitle": {
+    "description": "Application name shown in the window title."
+  },
+  "noteVariableFrameRate": "Uneven frame timing will be fixed.",
+  "noteHevc422": "This recording format only plays in Resolve with a recent NVIDIA card.",
+  "noteExperimentalAv1": "Smallest files are harder to edit smoothly.",
+  "noteHdrToneMapped": "Very bright colours will be adjusted to look right on any screen.",
+  "noteHdrNotConverted": "This video uses extra-bright colours that may look washed out on a phone.",
+  "noteAudioConvertedToFit": "The sound will be converted to fit this file type.",
+  "selectAll": "Select all"
 }

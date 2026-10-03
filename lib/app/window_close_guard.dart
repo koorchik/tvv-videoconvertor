@@ -33,8 +33,7 @@ class _WindowCloseGuardState extends ConsumerState<WindowCloseGuard>
 
   @override
   Future<void> onWindowClose() async {
-    if (!ref.exists(queueControllerProvider) ||
-        !ref.read(queueControllerProvider).isRunning) {
+    if (!ref.exists(queueProvider) || !ref.read(queueProvider).busy) {
       await windowManager.destroy();
       return;
     }
@@ -58,7 +57,9 @@ class _WindowCloseGuardState extends ConsumerState<WindowCloseGuard>
     );
     if (quit != true) return;
     // Stopping first lets FFmpeg exit and the unfinished file be removed.
-    await ref.read(queueControllerProvider.notifier).stopAll();
+    final queue = ref.read(queueProvider.notifier);
+    if (!ref.read(queueProvider).paused) queue.togglePause();
+    await queue.cancelActive();
     await windowManager.destroy();
   }
 

@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../settings.dart';
 
+/// Each language's own short name. "UK" would read as the United Kingdom.
+const _shortNames = {'en': 'EN', 'uk': 'УКР'};
+
 /// Switches the interface language. The choice is remembered.
 class LanguageButton extends ConsumerWidget {
   const LanguageButton({super.key});
@@ -19,7 +22,7 @@ class LanguageButton extends ConsumerWidget {
         onPressed: () => menu.isOpen ? menu.close() : menu.open(),
         icon: const Icon(Icons.translate_rounded, size: 18),
         // The language currently shown, in its own short form.
-        label: Text(l10n.localeName.toUpperCase()),
+        label: Text(_shortNames[l10n.localeName] ?? l10n.localeName),
       ),
       menuChildren: [
         for (final entry in appLanguages.entries)

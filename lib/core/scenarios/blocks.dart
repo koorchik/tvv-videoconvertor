@@ -93,3 +93,34 @@ int fixedRateVideoBytes(MediaInfo info, double megabitsAtUhd30) {
   final seconds = info.duration.inMicroseconds / 1e6;
   return (megabitsAtUhd30 * 1e6 * scale * seconds / 8).round();
 }
+
+/// A short file-name tag for an encode, from the settings that matter:
+/// `hevc-crf20`, `av1-nvenc-cq28`. Lets results made with different settings
+/// be told apart by name.
+String encoderTag(VideoEncode video) {
+  final encoder = video.encoder;
+  final family = encoder.contains('265') || encoder.startsWith('hevc')
+      ? 'hevc'
+      : encoder.contains('av1')
+      ? 'av1'
+      : encoder.contains('264')
+      ? 'h264'
+      : encoder.replaceAll('_', '-');
+  final hardware = encoder.startsWith('lib') ? null : encoder.split('_').last;
+  const qualityFlags = {
+    '-crf': 'crf',
+    '-cq': 'cq',
+    '-global_quality': 'icq',
+    '-qvbr_quality_level': 'qvbr',
+    '-q:v': 'q',
+  };
+  String? quality;
+  for (final entry in qualityFlags.entries) {
+    final index = video.args.indexOf(entry.key);
+    if (index >= 0 && index + 1 < video.args.length) {
+      quality = '${entry.value}${video.args[index + 1]}';
+      break;
+    }
+  }
+  return [family, ?hardware, ?quality].join('-');
+}

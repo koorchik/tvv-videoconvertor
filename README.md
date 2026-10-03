@@ -4,7 +4,8 @@ A desktop app that converts batches of videos for a few everyday goals, built
 for people who do not want to learn what a codec is. It is a friendly front end
 for [FFmpeg](https://ffmpeg.org/).
 
-Drop videos in, pick what you want, press Start.
+Drop videos in, pick what you want, press **Add to queue**. Converting starts
+by itself.
 
 ## What it does today
 
@@ -31,23 +32,39 @@ It does the least work that reaches the goal. A file that is already fine is
 left alone; a file that only needs its sound converted is done in seconds with
 the picture copied untouched; only what must be re-encoded is re-encoded.
 
+### How it works
+
+The window has three parts:
+
+- **Your videos** (top left): the files you added, each listed once. Newly
+  added videos are selected, so dropping videos and pressing Add to queue is
+  all it takes.
+- **What to do** (right): the goal and its options, whole video or a
+  10-second sample, and where to save. It applies to the selected videos.
+  **Add to queue** queues them; **Add all** queues every video.
+- **Queue** (bottom left): starts by itself, one conversion at a time. Pause,
+  reorder, cancel or retry at any time.
+
+Change the settings and press Add to queue again to get the same video in
+another form: each job keeps the settings it was added with, and output names
+carry them (`clip_hevc-crf20.mp4`, `clip_av1-crf25.mp4`, `clip_phone-1080p.mp4`).
+
 Also:
 
-- The list stays editable while converting: add, remove, reorder, cancel one
-  file or stop everything. Failed or cancelled files can be retried.
-- **Expected size before starting:** for each video and the whole batch,
-  with the time it will take. Where the size depends on the footage, a few
-  short pieces are encoded in the background with the exact settings and
-  scaled up.
+- **Samples:** choose "10-second sample" to make a short piece with exactly
+  the chosen settings, from the start or the middle. Samples go to a
+  `Samples` folder, and their row shows the sample's size and the expected
+  size of the whole video. "Convert whole video" then queues the real thing.
+- **Expected size before starting:** for each selected video and in total,
+  with the time it will take. Where the size depends on the footage, short
+  pieces are encoded in the background with the exact settings and scaled up.
 - Progress, time left and expected size while converting.
-- **One goal for everything, or one per video:** a goal applies to all videos;
-  click a video to choose something different for it. The same file can be
-  added more than once to get it in several formats.
-- **Try a 10-second sample** before a long conversion, from the start or the
-  middle, and get the expected size and time for the whole video.
-- The computer is kept awake while converting (Linux and macOS).
-- **Show the command:** every video can show the exact FFmpeg command, on one
+- **Video details:** every detail of a file (codecs, bitrates, colour, HDR,
+  sound tracks, timecode, all metadata tags, FFmpeg's full report), for the
+  original and, once converted, for the result.
+- **Show the command:** the exact FFmpeg command for any video or job, on one
   line or explained option by option, ready to paste into a terminal.
+- The computer is kept awake while converting (Linux and macOS).
 - Originals are never modified or overwritten. Unfinished outputs are removed.
 - Plain words first, with the technical detail beside them in smaller type
   ("Smallest file" with "AV1" underneath).
@@ -116,7 +133,8 @@ lib/core/   the conversion engine, plain Dart with no UI code
   ffmpeg/     finding FFmpeg, what it can do, building and running commands
   queue/      running one conversion safely (temporary file, rename, cleanup)
   estimate/   speed, time left, expected size
-lib/app/    the Flutter UI
+lib/app/    the Flutter UI: sources/ (videos), recipe/ (what to do),
+            queue/, estimates/, home/ (the screen)
 lib/l10n/   texts in English and Ukrainian
 tool/       developer tools
 test/       tests, mirroring lib/

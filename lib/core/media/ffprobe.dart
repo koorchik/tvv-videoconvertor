@@ -28,6 +28,7 @@ class Ffprobe {
         'json',
         '-show_format',
         '-show_streams',
+        '-show_chapters',
         '-i',
         inputUrl(path),
       ],
@@ -85,6 +86,7 @@ MediaInfo parseFfprobeJson(String path, Map<String, dynamic> json) {
     video: video,
     audio: audio,
     tags: _tags(format['tags']),
+    raw: json,
   );
 }
 

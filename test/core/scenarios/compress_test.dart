@@ -28,7 +28,7 @@ void main() {
         result.outputArgs,
         containsAllInOrder(['-movflags', '+faststart']),
       );
-      expect(result.nameSuffix, '_av1');
+      expect(result.nameSuffix, '_av1-crf25');
     });
 
     const crfs = {'compact': '29', 'high': '25', 'maximum': '21'};
@@ -78,7 +78,7 @@ void main() {
       expect(video(result).encoder, 'libx265');
       expect(video(result).args, containsAllInOrder(['-profile:v', 'main10']));
       expect(result.outputArgs, containsAllInOrder(['-tag:v', 'hvc1']));
-      expect(result.nameSuffix, '_hevc');
+      expect(result.nameSuffix, '_hevc-crf20');
     });
   });
 

@@ -10,16 +10,10 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'TVV Video Converter';
-
-  @override
   String get dropZoneTitle => 'Drop videos or folders here';
 
   @override
   String get dropZoneHint => 'Your original files are never changed.';
-
-  @override
-  String get dropHere => 'Drop to add';
 
   @override
   String get addVideos => 'Add videos';
@@ -32,9 +26,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearFinished => 'Clear finished';
-
-  @override
-  String get goalTitle => 'What do you want to do?';
 
   @override
   String get scenarioCompressTitle => 'Make it small';
@@ -133,19 +124,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveReset => 'Use the default';
 
   @override
-  String get start => 'Start';
-
-  @override
-  String get stop => 'Stop';
-
-  @override
   String get pause => 'Pause';
 
   @override
   String get resume => 'Continue';
-
-  @override
-  String get trySample => 'Try a 10-second sample';
 
   @override
   String get sampleFromStart => 'From the beginning';
@@ -187,15 +169,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusUnreadable => 'Not a video file';
 
   @override
-  String get statusPaused => 'Paused';
-
-  @override
-  String get statusDone => 'Done';
-
-  @override
-  String get statusNothingToDo => 'Nothing to do';
-
-  @override
   String get statusFailed => 'Could not convert';
 
   @override
@@ -205,17 +178,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusStarting => 'Starting…';
 
   @override
-  String get noteVariableFrameRate => 'Uneven frame timing will be fixed.';
-
-  @override
-  String get noteHevc422 =>
-      'This recording format only plays in Resolve with a recent NVIDIA card.';
-
-  @override
-  String get noteExperimentalAv1 =>
-      'Smallest files are harder to edit smoothly.';
-
-  @override
   String progressLeft(String time) {
     return '$time left';
   }
@@ -223,11 +185,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String aboutSize(String size) {
     return 'about $size';
-  }
-
-  @override
-  String sizeChange(String before, String after) {
-    return '$before → $after';
   }
 
   @override
@@ -247,18 +204,6 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other: '$count videos',
       one: '1 video',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String toConvertCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count videos to convert',
-      one: '1 video to convert',
-      zero: 'Nothing to convert',
     );
     return '$_temp0';
   }
@@ -299,23 +244,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get unitKB => 'KB';
-
-  @override
-  String get sampleMaking => 'Making a short sample…';
-
-  @override
-  String get sampleReadyTitle => 'Sample ready';
-
-  @override
-  String sampleReadyBody(String size, String time) {
-    return 'The whole video will be about $size and take about $time.';
-  }
-
-  @override
-  String get sampleFailed => 'The sample could not be made.';
-
-  @override
-  String get playSample => 'Play sample';
 
   @override
   String get playOriginal => 'Play original';
@@ -526,18 +454,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Thorough rebuilds the picture and sound from scratch. It takes much longer and is the safest.';
 
   @override
-  String get noteHdrToneMapped =>
-      'Very bright colours will be adjusted to look right on any screen.';
-
-  @override
-  String get noteHdrNotConverted =>
-      'This video uses extra-bright colours that may look washed out on a phone.';
-
-  @override
-  String get noteAudioConvertedToFit =>
-      'The sound will be converted to fit this file type.';
-
-  @override
   String get statusNoSound => 'No sound in this file';
 
   @override
@@ -550,30 +466,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String takesAbout(String time) {
     return 'takes about $time';
   }
-
-  @override
-  String goalForSelected(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'What to do with the $count selected videos?',
-      one: 'What to do with the selected video?',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get backToAll => 'Back to all videos';
-
-  @override
-  String get goalAppliesToAll =>
-      'Applies to all videos. Click a video to choose something different for it.';
-
-  @override
-  String get addAgain => 'Add again for another goal';
-
-  @override
-  String get language => 'Language';
 
   @override
   String get languageSystem => 'Same as the computer';
@@ -594,4 +486,309 @@ class AppLocalizationsEn extends AppLocalizations {
   String techUpTo(String lines) {
     return 'up to $lines';
   }
+
+  @override
+  String inQueueCount(int count) {
+    return '$count in queue';
+  }
+
+  @override
+  String doneCount(int count) {
+    return '$count done';
+  }
+
+  @override
+  String get videoDetails => 'Video details';
+
+  @override
+  String recipeTitleSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'What to do with $count selected videos',
+      one: 'What to do with the selected video',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recipeTitleNone => 'What to do';
+
+  @override
+  String get selectVideosHint =>
+      'Select videos on the left to choose what to do with them.';
+
+  @override
+  String get convertTitle => 'Convert';
+
+  @override
+  String get convertWhole => 'Whole video';
+
+  @override
+  String get convertSample => '10-second sample';
+
+  @override
+  String get addToQueue => 'Add to queue';
+
+  @override
+  String addAllToQueue(int count) {
+    return 'Add all ($count)';
+  }
+
+  @override
+  String get alreadyQueued => 'Already in the queue';
+
+  @override
+  String samplesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count samples of 10 seconds',
+      one: '1 sample of 10 seconds',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get queueTitle => 'Queue';
+
+  @override
+  String get queueEmpty =>
+      'Choose videos and what to do, then press Add to queue. Converting starts by itself.';
+
+  @override
+  String get queuePaused => 'Paused';
+
+  @override
+  String get jobWaiting => 'Waiting';
+
+  @override
+  String pausedAt(int percent) {
+    return 'Paused at $percent%';
+  }
+
+  @override
+  String get jobSkipped => 'Nothing to do: already right';
+
+  @override
+  String get sampleChip => 'Sample 10 s';
+
+  @override
+  String sampleResult(String size, String fullSize, String time) {
+    return 'Sample $size · whole video about $fullSize, about $time';
+  }
+
+  @override
+  String tookTime(String time) {
+    return 'took $time';
+  }
+
+  @override
+  String get play => 'Play';
+
+  @override
+  String get convertWholeVideo => 'Convert whole video';
+
+  @override
+  String get originalDetails => 'Details of the original';
+
+  @override
+  String get resultDetails => 'Details of the result';
+
+  @override
+  String get useSettings => 'Use these settings';
+
+  @override
+  String get removeFromList => 'Remove from list';
+
+  @override
+  String get detailsViewEncoding => 'Encoding';
+
+  @override
+  String get detailsViewMetadata => 'All metadata';
+
+  @override
+  String get detailsViewReport => 'Full report';
+
+  @override
+  String get noTags => 'No tags';
+
+  @override
+  String get groupFile => 'File';
+
+  @override
+  String groupVideo(int number) {
+    return 'Video track $number';
+  }
+
+  @override
+  String groupAudio(int number) {
+    return 'Audio track $number';
+  }
+
+  @override
+  String groupSubtitle(int number) {
+    return 'Subtitles $number';
+  }
+
+  @override
+  String get groupTimecode => 'Timecode';
+
+  @override
+  String groupData(int number) {
+    return 'Data track $number';
+  }
+
+  @override
+  String groupAttachment(int number) {
+    return 'Attachment $number';
+  }
+
+  @override
+  String get groupChapters => 'Chapters';
+
+  @override
+  String groupChapter(int number) {
+    return 'Chapter $number';
+  }
+
+  @override
+  String get fieldContainer => 'Container';
+
+  @override
+  String get fieldSize => 'Size';
+
+  @override
+  String get fieldDuration => 'Duration';
+
+  @override
+  String get fieldBitrate => 'Bitrate';
+
+  @override
+  String get fieldTracks => 'Tracks';
+
+  @override
+  String get fieldCodec => 'Codec';
+
+  @override
+  String get fieldResolution => 'Resolution';
+
+  @override
+  String get fieldAspectRatio => 'Aspect ratio';
+
+  @override
+  String get fieldFrameRate => 'Frame rate';
+
+  @override
+  String get fieldBitDepth => 'Bit depth';
+
+  @override
+  String get fieldChroma => 'Chroma subsampling';
+
+  @override
+  String get fieldPixelFormat => 'Pixel format';
+
+  @override
+  String get fieldColorPrimaries => 'Colour primaries';
+
+  @override
+  String get fieldColorTransfer => 'Transfer';
+
+  @override
+  String get fieldColorMatrix => 'Matrix';
+
+  @override
+  String get fieldColorRange => 'Range';
+
+  @override
+  String get fieldHdr => 'HDR';
+
+  @override
+  String get fieldMasteringDisplay => 'Mastering display';
+
+  @override
+  String get fieldLightLevel => 'Light level';
+
+  @override
+  String get fieldScanType => 'Scan type';
+
+  @override
+  String get fieldRotation => 'Rotation';
+
+  @override
+  String get fieldFrames => 'Frames';
+
+  @override
+  String get fieldChannels => 'Channels';
+
+  @override
+  String get fieldSampleRate => 'Sample rate';
+
+  @override
+  String get fieldSampleFormat => 'Sample format';
+
+  @override
+  String get fieldLanguage => 'Language';
+
+  @override
+  String get fieldTitle => 'Title';
+
+  @override
+  String get fieldDefaultTrack => 'Default track';
+
+  @override
+  String get fieldTimecode => 'Timecode';
+
+  @override
+  String get fieldFileName => 'File name';
+
+  @override
+  String get fieldChapter => 'Chapter';
+
+  @override
+  String get noteVariable => 'variable';
+
+  @override
+  String get noteProgressive => 'progressive';
+
+  @override
+  String get noteInterlaced => 'interlaced';
+
+  @override
+  String get noteNotStated => 'not stated';
+
+  @override
+  String get noteYes => 'yes';
+
+  @override
+  String get noteNo => 'no';
+
+  @override
+  String get appTitle => 'TVV Video Converter';
+
+  @override
+  String get noteVariableFrameRate => 'Uneven frame timing will be fixed.';
+
+  @override
+  String get noteHevc422 =>
+      'This recording format only plays in Resolve with a recent NVIDIA card.';
+
+  @override
+  String get noteExperimentalAv1 =>
+      'Smallest files are harder to edit smoothly.';
+
+  @override
+  String get noteHdrToneMapped =>
+      'Very bright colours will be adjusted to look right on any screen.';
+
+  @override
+  String get noteHdrNotConverted =>
+      'This video uses extra-bright colours that may look washed out on a phone.';
+
+  @override
+  String get noteAudioConvertedToFit =>
+      'The sound will be converted to fit this file type.';
+
+  @override
+  String get selectAll => 'Select all';
 }

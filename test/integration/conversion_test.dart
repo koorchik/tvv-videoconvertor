@@ -2,6 +2,16 @@
 library;
 
 import 'dart:io';
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tvv_videoconvertor/app/providers.dart';
+import 'package:tvv_videoconvertor/app/queue/queue_controller.dart';
+import 'package:tvv_videoconvertor/app/queue/queue_state.dart';
+import 'package:tvv_videoconvertor/app/recipe/recipe.dart';
+import 'package:tvv_videoconvertor/app/recipe/recipe_controller.dart';
+import 'package:tvv_videoconvertor/app/sources/sources_controller.dart';
+import 'package:tvv_videoconvertor/core/media/media_details.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -21,6 +31,7 @@ import 'package:tvv_videoconvertor/core/scenarios/scenario.dart';
 import 'package:tvv_videoconvertor/core/scenarios/share_phone.dart';
 import 'package:tvv_videoconvertor/core/scenarios/strip_metadata.dart';
 
+import '../support/fakes.dart';
 import '../support/test_media.dart';
 
 /// Labels a generated clip as HLG, the way a camera in HLG mode does.
@@ -536,6 +547,106 @@ void main() {
       expect(estimate.bytes, closeTo(actual.sizeBytes, actual.sizeBytes * 0.3));
       expect(estimate.time, isNotNull);
       expect(Directory(media!.file('estimates')).listSync(), isEmpty);
+    });
+  });
+
+  group('The queue, with real FFmpeg', () {
+    /// The app's state, wired to the real FFmpeg.
+    Future<ProviderContainer> app() async {
+      final container = ProviderContainer(
+        overrides: [
+          environmentProvider.overrideWith(
+            (ref) async => AppEnvironment(
+              ffprobe: ffprobe,
+              executor: executor,
+              capabilities: capabilities,
+              sleepInhibitor: FakeSleepInhibitor(),
+              estimator: SampleEstimator(FfmpegRunner(media!.paths.ffmpeg)),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(environmentProvider.future);
+      return container;
+    }
+
+    /// Waits until no job in the queue is waiting or under way.
+    Future<List<QueueJob>> finished(ProviderContainer container) async {
+      final done = Completer<void>();
+      final subscription = container.listen(queueProvider, (_, state) {
+        if (!state.busy && state.jobs.every((j) => !j.isPending)) {
+          if (!done.isCompleted) done.complete();
+        }
+      }, fireImmediately: true);
+      await done.future.timeout(const Duration(minutes: 2));
+      subscription.close();
+      return container.read(queueProvider).jobs;
+    }
+
+    test('a sample job lands in Samples, ten seconds long', () async {
+      if (unavailable()) return;
+      final source = await media!.clip('queued_sample.mp4', seconds: 15);
+      final container = await app();
+      await container.read(sourcesProvider.notifier).addPaths([source]);
+      container.read(recipeProvider.notifier).setSample(SampleChoice.start);
+
+      container.read(queueProvider.notifier).addSelected();
+      final job = (await finished(container)).single;
+
+      expect(job.status, JobStatus.done, reason: '${job.result?.errorLines}');
+      expect(
+        job.outputPath,
+        p.join(
+          media!.dir.path,
+          'Converted',
+          'Samples',
+          'queued_sample_hevc-crf20_sample10s.mp4',
+        ),
+      );
+      final sample = await ffprobe.probe(job.outputPath);
+      expect(sample.duration.inMilliseconds, closeTo(10000, 100));
+      expect(sample.video!.codec, 'hevc');
+      expect(wholeVideoEstimate(job, job.result!), isNotNull);
+    });
+
+    test('a whole-video job is named after its settings', () async {
+      if (unavailable()) return;
+      final source = await media!.clip('queued_whole.mp4');
+      final container = await app();
+      await container.read(sourcesProvider.notifier).addPaths([source]);
+      container.read(recipeProvider.notifier).setOption('quality', 'maximum');
+
+      container.read(queueProvider.notifier).addSelected();
+      final job = (await finished(container)).single;
+
+      expect(job.status, JobStatus.done);
+      expect(
+        File(
+          p.join(media!.dir.path, 'Converted', 'queued_whole_hevc-crf18.mp4'),
+        ).existsSync(),
+        isTrue,
+      );
+    });
+
+    test('the details of a file list its planted tags', () async {
+      if (unavailable()) return;
+      final source = await media!.clip(
+        'tagged.mov',
+        extra: [
+          '-metadata',
+          'make=Example Camera Co',
+          '-timecode',
+          '01:00:00:00',
+        ],
+      );
+
+      final info = await ffprobe.probe(source);
+      final tags = metadataDetails(info.raw).first.tags;
+      final sections = encodingDetails(info.raw);
+
+      expect(tags['make'], 'Example Camera Co');
+      expect(sections.map((s) => s.group), contains(DetailGroup.timecode));
     });
   });
 

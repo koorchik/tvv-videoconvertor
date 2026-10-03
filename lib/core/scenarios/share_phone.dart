@@ -80,7 +80,7 @@ class SharePhonePreset implements Preset {
       audio: _audio(input),
       muxer: 'mp4',
       extension: 'mp4',
-      nameSuffix: '_phone',
+      nameSuffix: small ? '_phone-720p' : '_phone-1080p',
       outputArgs: [
         if (video.isVariableFrameRate) ...constantFrameRateArgs(video),
         '-movflags',

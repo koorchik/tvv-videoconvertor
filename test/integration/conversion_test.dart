@@ -12,6 +12,7 @@ import 'package:tvv_videoconvertor/app/recipe/recipe.dart';
 import 'package:tvv_videoconvertor/app/recipe/recipe_controller.dart';
 import 'package:tvv_videoconvertor/app/sources/sources_controller.dart';
 import 'package:tvv_videoconvertor/core/media/media_details.dart';
+import 'package:tvv_videoconvertor/core/media/thumbnail.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -627,6 +628,29 @@ void main() {
         ).existsSync(),
         isTrue,
       );
+    });
+
+    test('a frame of a video can be grabbed as a small picture', () async {
+      if (unavailable()) return;
+      final source = await media!.clip('for_thumbnail.mp4', size: '1280x720');
+
+      final picture = await Thumbnailer(media!.paths.ffmpeg)
+          .frame(source, at: const Duration(seconds: 1), width: 320);
+
+      // A JPEG starts with FF D8 and ends with FF D9.
+      expect(picture, isNotNull);
+      expect(picture!.sublist(0, 2), [0xFF, 0xD8]);
+      expect(picture.sublist(picture.length - 2), [0xFF, 0xD9]);
+    });
+
+    test('a file that is not a video gives no picture, not an error', () async {
+      if (unavailable()) return;
+      final notVideo = File(media!.file('notes.txt'))..writeAsStringSync('hi');
+
+      final picture = await Thumbnailer(media!.paths.ffmpeg)
+          .frame(notVideo.path);
+
+      expect(picture, isNull);
     });
 
     test('the details of a file list its planted tags', () async {

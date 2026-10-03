@@ -329,10 +329,7 @@ class _VideoTile extends ConsumerWidget {
                       PopupMenuItem(
                         onTap: () => showDialog<void>(
                           context: context,
-                          builder: (_) => MediaDetailsDialog(
-                            title: format.fileName(video.path),
-                            raw: info.raw,
-                          ),
+                          builder: (_) => MediaDetailsDialog(info: info),
                         ),
                         child: Text(l10n.videoDetails),
                       ),

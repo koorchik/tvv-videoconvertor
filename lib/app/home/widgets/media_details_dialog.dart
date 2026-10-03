@@ -1,145 +1,124 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
 import '../../../core/media/media_details.dart';
+import '../../../core/media/media_info.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../format.dart';
+import '../../providers.dart';
+import '../technical_text.dart';
 
 enum _View { encoding, metadata, report }
 
-/// Everything known about a video file, in three views: how it is encoded,
-/// every metadata tag, and FFmpeg's full report.
-class MediaDetailsDialog extends StatefulWidget {
-  const MediaDetailsDialog({super.key, required this.title, required this.raw});
+const _mono = 'JetBrains Mono';
 
-  /// Usually the file name.
-  final String title;
+/// Everything known about a video file: a frame from it and its key facts at
+/// the top, then how it is encoded, every metadata tag, or FFmpeg's full
+/// report.
+class MediaDetailsDialog extends ConsumerStatefulWidget {
+  const MediaDetailsDialog({super.key, required this.info});
 
-  /// ffprobe's report (`MediaInfo.raw`).
-  final Map<String, Object?> raw;
+  final MediaInfo info;
 
   @override
-  State<MediaDetailsDialog> createState() => _MediaDetailsDialogState();
+  ConsumerState<MediaDetailsDialog> createState() => _MediaDetailsDialogState();
 }
 
-class _MediaDetailsDialogState extends State<MediaDetailsDialog> {
+class _MediaDetailsDialogState extends ConsumerState<MediaDetailsDialog> {
   var _view = _View.encoding;
   var _copied = false;
+  late final Future<Uint8List?> _thumbnail;
 
-  static const _mono = TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13);
+  Map<String, Object?> get _raw => widget.info.raw;
+
+  @override
+  void initState() {
+    super.initState();
+    final info = widget.info;
+    final thumbnailer = ref.read(environmentProvider).value?.thumbnailer;
+    // A little way in: the very first frame is often black.
+    _thumbnail = info.video == null || thumbnailer == null
+        ? Future.value()
+        : thumbnailer.frame(info.path, at: info.duration * 0.1);
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
 
-    return AlertDialog(
-      title: Text(widget.title),
-      content: SizedBox(
-        width: (MediaQuery.sizeOf(context).width - 120).clamp(320, 900),
+    return Dialog(
+      insetPadding: const EdgeInsets.all(28),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 960, maxHeight: 760),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                SegmentedButton<_View>(
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment(
-                      value: _View.encoding,
-                      label: Text(l10n.detailsViewEncoding),
-                    ),
-                    ButtonSegment(
-                      value: _View.metadata,
-                      label: Text(l10n.detailsViewMetadata),
-                    ),
-                    ButtonSegment(
-                      value: _View.report,
-                      label: Text(l10n.detailsViewReport),
-                    ),
-                  ],
-                  selected: {_view},
-                  onSelectionChanged: (value) => setState(() {
-                    _view = value.first;
-                    _copied = false;
-                  }),
-                ),
-                const Spacer(),
-                FilledButton.tonalIcon(
-                  onPressed: () async {
-                    await Clipboard.setData(ClipboardData(text: _text(l10n)));
-                    if (mounted) setState(() => _copied = true);
-                  },
-                  icon: Icon(
-                    _copied ? Icons.check_rounded : Icons.copy_rounded,
-                    size: 18,
+            _Header(info: widget.info, thumbnail: _thumbnail),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 14),
+              child: Row(
+                children: [
+                  SegmentedButton<_View>(
+                    showSelectedIcon: false,
+                    segments: [
+                      ButtonSegment(
+                        value: _View.encoding,
+                        icon: const Icon(Icons.dashboard_outlined, size: 18),
+                        label: Text(l10n.detailsViewEncoding),
+                      ),
+                      ButtonSegment(
+                        value: _View.metadata,
+                        icon: const Icon(Icons.sell_outlined, size: 18),
+                        label: Text(l10n.detailsViewMetadata),
+                      ),
+                      ButtonSegment(
+                        value: _View.report,
+                        icon: const Icon(Icons.data_object_rounded, size: 18),
+                        label: Text(l10n.detailsViewReport),
+                      ),
+                    ],
+                    selected: {_view},
+                    onSelectionChanged: (value) => setState(() {
+                      _view = value.first;
+                      _copied = false;
+                    }),
                   ),
-                  label: Text(_copied ? l10n.copied : l10n.copy),
-                ),
-              ],
+                  const Spacer(),
+                  FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 40),
+                    ),
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(text: _text(l10n)));
+                      if (mounted) setState(() => _copied = true);
+                    },
+                    icon: Icon(
+                      _copied ? Icons.check_rounded : Icons.copy_rounded,
+                      size: 18,
+                    ),
+                    label: Text(_copied ? l10n.copied : l10n.copy),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
             Flexible(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: SingleChildScrollView(child: _content(l10n, theme)),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: switch (_view) {
+                  _View.encoding => _EncodingView(raw: _raw),
+                  _View.metadata => _MetadataView(raw: _raw),
+                  _View.report => _ReportView(raw: _raw),
+                },
               ),
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.close),
-        ),
-      ],
     );
-  }
-
-  Widget _content(AppLocalizations l10n, ThemeData theme) {
-    switch (_view) {
-      case _View.report:
-        return SelectableText(fullReport(widget.raw), style: _mono);
-      case _View.encoding:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final section in encodingDetails(widget.raw))
-              _Section(
-                title: groupTitle(l10n, section.group, section.number),
-                rows: [
-                  for (final row in section.rows)
-                    (fieldLabel(l10n, row.field), rowValue(l10n, row)),
-                ],
-              ),
-          ],
-        );
-      case _View.metadata:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final section in metadataDetails(widget.raw))
-              _Section(
-                title: section.group == DetailGroup.chapters
-                    ? l10n.groupChapter(section.number)
-                    : groupTitle(l10n, section.group, section.number),
-                rows: [
-                  for (final entry in section.tags.entries)
-                    (entry.key, entry.value),
-                ],
-                keysAreTechnical: true,
-                empty: l10n.noTags,
-              ),
-          ],
-        );
-    }
   }
 
   /// The current view as plain text, for copying.
@@ -155,98 +134,608 @@ class _MediaDetailsDialogState extends State<MediaDetailsDialog> {
 
     switch (_view) {
       case _View.report:
-        return fullReport(widget.raw);
+        return fullReport(_raw);
       case _View.encoding:
-        for (final s in encodingDetails(widget.raw)) {
+        for (final s in _ordered(encodingDetails(_raw))) {
           section(groupTitle(l10n, s.group, s.number), [
             for (final row in s.rows)
               (fieldLabel(l10n, row.field), rowValue(l10n, row)),
           ]);
         }
       case _View.metadata:
-        for (final s in metadataDetails(widget.raw)) {
-          section(
-            s.group == DetailGroup.chapters
-                ? l10n.groupChapter(s.number)
-                : groupTitle(l10n, s.group, s.number),
-            [for (final e in s.tags.entries) (e.key, e.value)],
-          );
+        for (final s in metadataDetails(_raw)) {
+          section(_tagTitle(l10n, s), [
+            for (final e in s.tags.entries) (e.key, e.value),
+          ]);
         }
     }
     return buffer.toString().trimRight();
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({
-    required this.title,
-    required this.rows,
-    this.keysAreTechnical = false,
-    this.empty,
+/// A frame of the video, its name and where it is, and the facts people ask
+/// about first.
+class _Header extends StatelessWidget {
+  const _Header({required this.info, required this.thumbnail});
+
+  final MediaInfo info;
+  final Future<Uint8List?> thumbnail;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final format = Formatter(l10n);
+    final video = info.video;
+    final audio = info.audio.firstOrNull;
+    final rate = video?.frameRate;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 12, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Thumbnail(
+            thumbnail: thumbnail,
+            duration: format.clock(info.duration),
+            audioOnly: video == null,
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 2),
+                Text(
+                  p.basename(info.path),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  p.dirname(info.path),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    if (video != null) ...[
+                      _Fact(
+                        Icons.aspect_ratio_rounded,
+                        '${format.resolution(video)}  '
+                        '${video.width}×${video.height}',
+                      ),
+                      _Fact(Icons.movie_outlined, sourceFormat(video)),
+                      if (video.color.isHdr)
+                        _Fact(
+                          Icons.hdr_on_rounded,
+                          video.color.transfer == 'smpte2084' ? 'HDR10' : 'HLG',
+                          highlight: true,
+                        ),
+                      if (rate != null)
+                        _Fact(
+                          Icons.speed_rounded,
+                          '${_trim(rate.toStringAsFixed(2))} fps',
+                        ),
+                    ],
+                    if (audio != null)
+                      _Fact(
+                        Icons.graphic_eq_rounded,
+                        '${audioFormat(audio)}  ${_channels(audio.channels)}',
+                      ),
+                    _Fact(
+                      Icons.sd_storage_outlined,
+                      format.bytes(info.sizeBytes),
+                    ),
+                    if (info.bitRate case final bitRate?)
+                      _Fact(Icons.data_usage_rounded, formatBitrate(bitRate)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.close,
+            icon: const Icon(Icons.close_rounded),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _trim(String number) =>
+      number.replaceFirst(RegExp(r'\.?0+$'), '');
+
+  static String _channels(int channels) => switch (channels) {
+    1 => 'mono',
+    2 => 'stereo',
+    6 => '5.1',
+    8 => '7.1',
+    _ => '$channels ch',
+  };
+}
+
+class _Thumbnail extends StatelessWidget {
+  const _Thumbnail({
+    required this.thumbnail,
+    required this.duration,
+    required this.audioOnly,
   });
 
-  final String title;
-  final List<(String, String)> rows;
+  final Future<Uint8List?> thumbnail;
+  final String duration;
+  final bool audioOnly;
 
-  /// Tag names are shown as written in the file, in the fixed-width font.
-  final bool keysAreTechnical;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: SizedBox(
+        width: 192,
+        height: 108,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Shown until the frame arrives, and for files without one.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [scheme.primaryContainer, scheme.tertiaryContainer],
+                ),
+              ),
+              child: Icon(
+                audioOnly ? Icons.graphic_eq_rounded : Icons.movie_outlined,
+                size: 40,
+                color: scheme.onPrimaryContainer.withValues(alpha: 0.7),
+              ),
+            ),
+            FutureBuilder<Uint8List?>(
+              future: thumbnail,
+              builder: (context, snapshot) {
+                final bytes = snapshot.data;
+                if (bytes == null) return const SizedBox.shrink();
+                return Image.memory(
+                  bytes,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                );
+              },
+            ),
+            Positioned(
+              right: 6,
+              bottom: 6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  duration,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-  /// Shown when there are no rows.
-  final String? empty;
+/// One key fact as a small rounded label.
+class _Fact extends StatelessWidget {
+  const _Fact(this.icon, this.text, {this.highlight = false});
+
+  final IconData icon;
+  final String text;
+
+  /// For facts worth noticing, such as HDR.
+  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final muted = theme.colorScheme.onSurfaceVariant;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final scheme = theme.colorScheme;
+    final background = highlight
+        ? scheme.tertiaryContainer
+        : scheme.surfaceContainerHighest;
+    final foreground = highlight
+        ? scheme.onTertiaryContainer
+        : scheme.onSurface;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
+          Icon(icon, size: 15, color: foreground.withValues(alpha: 0.75)),
+          const SizedBox(width: 5),
           Text(
-            title,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
+            text,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: foreground,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 6),
-          if (rows.isEmpty && empty != null)
-            Text(
-              empty!,
-              style: theme.textTheme.bodySmall?.copyWith(color: muted),
-            ),
-          for (final (label, value) in rows)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 3),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 200,
-                    child: Text(
-                      label,
-                      style: keysAreTechnical
-                          ? const TextStyle(
-                              fontFamily: 'JetBrains Mono',
-                              fontSize: 12.5,
-                            ).copyWith(color: muted)
-                          : theme.textTheme.bodyMedium?.copyWith(color: muted),
-                    ),
-                  ),
-                  Expanded(
-                    child: SelectableText(
-                      value,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );
   }
 }
+
+/// Picture first, then sound, then the file as a whole.
+List<DetailSection> _ordered(List<DetailSection> sections) {
+  const order = [
+    DetailGroup.video,
+    DetailGroup.audio,
+    DetailGroup.file,
+    DetailGroup.timecode,
+    DetailGroup.subtitle,
+    DetailGroup.data,
+    DetailGroup.attachment,
+    DetailGroup.chapters,
+  ];
+  return [
+    for (final group in order) ...sections.where((s) => s.group == group),
+  ];
+}
+
+/// Cards laid out side by side where there is room: three abreast in a wide
+/// window, two in a narrower one. Picture tracks and chapters, which have the
+/// most to show, take the full width.
+class _Cards extends StatelessWidget {
+  const _Cards({required this.cards});
+
+  final List<({bool wide, Widget child})> cards;
+
+  static const _gap = 12.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final full = constraints.maxWidth;
+        final abreast = full >= 840 ? 3 : (full >= 560 ? 2 : 1);
+        final narrow = (full - _gap * (abreast - 1)) / abreast;
+        return Wrap(
+          spacing: _gap,
+          runSpacing: _gap,
+          children: [
+            for (final card in cards)
+              SizedBox(
+                // A whisker less than the exact share, so rounding never
+                // pushes the last card of a row onto the next one.
+                width: card.wide ? full : narrow - 0.01,
+                child: card.child,
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _EncodingView extends StatelessWidget {
+  const _EncodingView({required this.raw});
+
+  final Map<String, Object?> raw;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return _Cards(
+      cards: [
+        for (final section in _ordered(encodingDetails(raw)))
+          (
+            wide:
+                section.group == DetailGroup.video ||
+                section.group == DetailGroup.chapters,
+            child: _Card(
+              group: section.group,
+              title: groupTitle(l10n, section.group, section.number),
+              subtitle: section.rows
+                  .where((r) => r.field == DetailField.codec)
+                  .map((r) => r.value)
+                  .firstOrNull,
+              child: _FieldGrid(
+                rows: [
+                  for (final row in section.rows)
+                    if (row.field != DetailField.codec) row,
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// A track's values as a grid: a small label above each value.
+class _FieldGrid extends StatelessWidget {
+  const _FieldGrid({required this.rows});
+
+  final List<DetailRow> rows;
+
+  static const _gap = 16.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        // As many columns as fit cells of a readable width, five at most.
+        const narrowest = 118.0;
+        final columns = ((width + _gap) / (narrowest + _gap)).floor().clamp(
+          1,
+          5,
+        );
+        final cell = (width - _gap * (columns - 1)) / columns;
+        return Wrap(
+          spacing: _gap,
+          runSpacing: 10,
+          children: [
+            for (final row in rows)
+              SizedBox(
+                width: wideFields.contains(row.field) ? width : cell - 0.01,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fieldLabel(l10n, row.field),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    SelectableText(
+                      rowValue(l10n, row),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _MetadataView extends StatelessWidget {
+  const _MetadataView({required this.raw});
+
+  final Map<String, Object?> raw;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return _Cards(
+      cards: [
+        for (final section in metadataDetails(raw))
+          (
+            wide: section.group == DetailGroup.file,
+            child: _Card(
+              group: section.group,
+              title: _tagTitle(l10n, section),
+              child: section.tags.isEmpty
+                  ? Text(
+                      l10n.noTags,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        for (final tag in section.tags.entries)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 5),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: 22,
+                                  child: isPersonalTag(tag.key)
+                                      ? Tooltip(
+                                          message: l10n.personalTag,
+                                          child: Icon(
+                                            Icons.person_pin_circle_outlined,
+                                            size: 16,
+                                            color: scheme.tertiary,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                SizedBox(
+                                  width: _keyColumnWidth(section.tags.keys),
+                                  child: Text(
+                                    tag.key,
+                                    softWrap: false,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: _mono,
+                                      fontSize: 12.5,
+                                      height: 1.5,
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: SelectableText(
+                                    tag.value,
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Wide enough for the longest tag name of a card, so names stay on one line
+/// and values start right after them. A character of the fixed-width font
+/// at this size is 7.5 pixels wide.
+double _keyColumnWidth(Iterable<String> keys) {
+  final longest = keys.fold(
+    0,
+    (max, key) => key.length > max ? key.length : max,
+  );
+  return (longest * 7.6 + 6).clamp(60, 300).toDouble();
+}
+
+class _ReportView extends StatelessWidget {
+  const _ReportView({required this.raw});
+
+  final Map<String, Object?> raw;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: SelectableText(
+        fullReport(raw),
+        style: const TextStyle(fontFamily: _mono, fontSize: 12.5, height: 1.5),
+      ),
+    );
+  }
+}
+
+/// One track or the file as a whole: an icon, a title and its content.
+class _Card extends StatelessWidget {
+  const _Card({
+    required this.group,
+    required this.title,
+    required this.child,
+    this.subtitle,
+  });
+
+  final DetailGroup group;
+  final String title;
+
+  /// Shown under the title, e.g. the track's codec.
+  final String? subtitle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: scheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(
+                  _icon(group),
+                  size: 17,
+                  color: scheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (subtitle != null)
+                      Tooltip(
+                        message: subtitle,
+                        child: Text(
+                          subtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  static IconData _icon(DetailGroup group) => switch (group) {
+    DetailGroup.file => Icons.insert_drive_file_outlined,
+    DetailGroup.video => Icons.movie_outlined,
+    DetailGroup.audio => Icons.graphic_eq_rounded,
+    DetailGroup.subtitle => Icons.subtitles_outlined,
+    DetailGroup.timecode => Icons.timer_outlined,
+    DetailGroup.data => Icons.data_object_rounded,
+    DetailGroup.attachment => Icons.attach_file_rounded,
+    DetailGroup.chapters => Icons.bookmarks_outlined,
+  };
+}
+
+String _tagTitle(AppLocalizations l10n, TagSection section) =>
+    section.group == DetailGroup.chapters
+    ? l10n.groupChapter(section.number)
+    : groupTitle(l10n, section.group, section.number);
 
 String groupTitle(AppLocalizations l10n, DetailGroup group, int number) =>
     switch (group) {

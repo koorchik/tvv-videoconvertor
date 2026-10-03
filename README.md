@@ -59,9 +59,10 @@ Also:
   with the time it will take. Where the size depends on the footage, short
   pieces are encoded in the background with the exact settings and scaled up.
 - Progress, time left and expected size while converting.
-- **Video details:** every detail of a file (codecs, bitrates, colour, HDR,
-  sound tracks, timecode, all metadata tags, FFmpeg's full report), for the
-  original and, once converted, for the result.
+- **Video details:** a frame of the video and its key facts, then every
+  detail (codecs, bitrates, colour, HDR, sound tracks, timecode), all
+  metadata tags with the personal ones marked, and FFmpeg's full report. For
+  the original and, once converted, for the result.
 - **Show the command:** the exact FFmpeg command for any video or job, on one
   line or explained option by option, ready to paste into a terminal.
 - The computer is kept awake while converting (Linux and macOS).

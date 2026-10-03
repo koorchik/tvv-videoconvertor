@@ -458,3 +458,47 @@ String _ratio(Object? value) {
   if (top == null || bottom == null || top <= 0 || bottom <= 0) return null;
   return (value: top / bottom, text: text);
 }
+
+/// Fields whose values are long and get a full row to themselves.
+const wideFields = {
+  DetailField.codec,
+  DetailField.masteringDisplay,
+  DetailField.lightLevel,
+  DetailField.title,
+  DetailField.fileName,
+  DetailField.chapter,
+};
+
+const _personalTags = {
+  'title',
+  'artist',
+  'author',
+  'album_artist',
+  'composer',
+  'comment',
+  'description',
+  'synopsis',
+  'copyright',
+  'date',
+  'creation_time',
+  'location',
+  'make',
+  'model',
+  'software',
+  'keywords',
+  'publisher',
+  'encoded_by',
+  'timecode',
+};
+
+/// Whether a metadata tag can tell something about the person who made the
+/// video: who, where, when, with what. "Remove personal data" removes every
+/// tag; this is for pointing out the ones that matter.
+bool isPersonalTag(String key) {
+  final name = key.toLowerCase();
+  final last = name.split('.').last.split('-').first;
+  return _personalTags.contains(last) ||
+      name.contains('location') ||
+      name.contains('gps') ||
+      name.contains('serial');
+}

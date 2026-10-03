@@ -293,10 +293,7 @@ class _JobTile extends ConsumerWidget {
               PopupMenuItem(
                 onTap: () => showDialog<void>(
                   context: context,
-                  builder: (_) => MediaDetailsDialog(
-                    title: format.fileName(job.path),
-                    raw: job.info.raw,
-                  ),
+                  builder: (_) => MediaDetailsDialog(info: job.info),
                 ),
                 child: Text(l10n.originalDetails),
               ),
@@ -473,8 +470,7 @@ class _JobTile extends ConsumerWidget {
       if (!context.mounted) return;
       await showDialog<void>(
         context: context,
-        builder: (_) =>
-            MediaDetailsDialog(title: p.basename(path), raw: info.raw),
+        builder: (_) => MediaDetailsDialog(info: info),
       );
     } on FfprobeException {
       // The result was moved or deleted since; nothing to show.

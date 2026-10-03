@@ -231,5 +231,6 @@
   "selectedCount": "вибрано: {count}",
   "convertSampleShort": "Зразок",
   "sampleFirst": "перші 10 с",
-  "sampleMiddle": "10 с із середини"
+  "sampleMiddle": "10 с із середини",
+  "personalTag": "Особисті дані: хто, де, коли або чим зняв відео"
 }

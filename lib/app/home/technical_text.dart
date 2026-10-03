@@ -231,3 +231,22 @@ String? choiceCaption(
       return null;
   }
 }
+
+/// What a sound track is, technically: `PCM 24-bit`, `AAC`.
+String audioFormat(AudioStream audio) {
+  final codec = audio.codec;
+  if (codec.startsWith('pcm_')) {
+    return 'PCM ${RegExp(r'\d+').stringMatch(codec) ?? ''}-bit';
+  }
+  return switch (codec) {
+    'aac' => 'AAC',
+    'mp3' => 'MP3',
+    'opus' => 'Opus',
+    'flac' => 'FLAC',
+    'ac3' => 'AC-3',
+    'eac3' => 'E-AC-3',
+    'alac' => 'ALAC',
+    'vorbis' => 'Vorbis',
+    _ => codec.toUpperCase(),
+  };
+}

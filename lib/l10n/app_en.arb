@@ -438,5 +438,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "personalTag": "Personal detail: who, where, when or with what the video was made"
 }

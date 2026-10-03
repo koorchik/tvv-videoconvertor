@@ -1489,6 +1489,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'middle 10 s'**
   String get sampleMiddle;
+
+  /// No description provided for @personalTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal detail: who, where, when or with what the video was made'**
+  String get personalTag;
 }
 
 class _AppLocalizationsDelegate

@@ -3,10 +3,12 @@ library;
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tvv_videoconvertor/app/window.dart';
+import 'package:tvv_videoconvertor/core/ffmpeg/locator.dart';
 import 'package:tvv_videoconvertor/core/media/ffprobe.dart';
 
 import '../support/fake_media.dart';
@@ -18,10 +20,38 @@ import '../support/pump_app.dart';
 ///
 ///   flutter test --tags screenshots
 void main() {
-  setUpAll(loadRealFonts);
+  // A frame to stand in for a video's thumbnail; none without FFmpeg.
+  Uint8List? frame;
+
+  setUpAll(() async {
+    await loadRealFonts();
+    final ffmpeg = FfmpegLocator().locate()?.ffmpeg;
+    if (ffmpeg == null) return;
+    final result = await Process.run(ffmpeg, [
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'testsrc2=s=640x360',
+      '-frames:v',
+      '1',
+      '-c:v',
+      'mjpeg',
+      '-f',
+      'image2pipe',
+      'pipe:1',
+    ], stdoutEncoding: null);
+    if (result.exitCode == 0) {
+      frame = Uint8List.fromList(result.stdout as List<int>);
+    }
+  });
 
   FakeEnvironment environment() {
-    final env = FakeEnvironment(capabilities: withGpu({'av1_nvenc'}));
+    final env = FakeEnvironment(
+      capabilities: withGpu({'av1_nvenc'}),
+      thumbnail: frame,
+    );
     env.ffprobe.add('/videos/DSC_0412.MOV');
     env.ffprobe.add(
       '/videos/DSC_0413.MOV',
@@ -94,14 +124,37 @@ void main() {
     await saveScreenshot(tester, '3_queue');
   });
 
-  testWidgets('details', (tester) async {
-    final sources = await pumpApp(tester, environment());
-    await addVideos(tester, sources, files);
+  /// Opens the details of the last video in the list and waits for its
+  /// thumbnail, which is decoded outside the test's simulated clock.
+  Future<void> openDetails(WidgetTester tester) async {
     await tester.tap(find.byTooltip('More').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Video details'));
     await tester.pumpAndSettle();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 400)),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('details', (tester) async {
+    final sources = await pumpApp(tester, environment());
+    await addVideos(tester, sources, files);
+    await openDetails(tester);
     await saveScreenshot(tester, '4_details');
+  });
+
+  testWidgets('details, all metadata, dark', (tester) async {
+    final sources = await pumpApp(
+      tester,
+      environment(),
+      themeMode: ThemeMode.dark,
+    );
+    await addVideos(tester, sources, files);
+    await openDetails(tester);
+    await tester.tap(find.text('All metadata'));
+    await tester.pumpAndSettle();
+    await saveScreenshot(tester, '4b_details_metadata');
   });
 
   testWidgets('dark, Ukrainian', (tester) async {

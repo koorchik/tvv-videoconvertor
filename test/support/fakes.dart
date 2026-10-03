@@ -6,7 +6,11 @@ import 'package:tvv_videoconvertor/core/estimate/progress_estimator.dart';
 import 'package:tvv_videoconvertor/core/estimate/size_estimator.dart';
 import 'package:tvv_videoconvertor/core/ffmpeg/capabilities.dart';
 import 'package:tvv_videoconvertor/core/media/ffprobe.dart';
+
+import 'dart:typed_data';
+
 import 'package:tvv_videoconvertor/core/media/media_info.dart';
+import 'package:tvv_videoconvertor/core/media/thumbnail.dart';
 import 'package:tvv_videoconvertor/core/platform/sleep_inhibitor.dart';
 import 'package:tvv_videoconvertor/core/queue/job_executor.dart';
 import 'package:tvv_videoconvertor/core/scenarios/scenario.dart';
@@ -26,6 +30,8 @@ class FakeFfprobe implements Ffprobe {
       formatName: info.formatName,
       duration: info.duration,
       sizeBytes: info.sizeBytes,
+      bitRate: info.bitRate,
+      tags: info.tags,
       video: info.video,
       audio: info.audio,
       raw: info.raw,
@@ -192,11 +198,34 @@ class FakeEstimator implements OutputEstimator {
   }
 }
 
+/// Hands out the same picture for every video.
+class FakeThumbnailer implements Thumbnailer {
+  FakeThumbnailer(this.bytes);
+
+  final Uint8List? bytes;
+
+  @override
+  String get ffmpeg => 'ffmpeg';
+
+  @override
+  Duration get timeout => Duration.zero;
+
+  @override
+  Future<Uint8List?> frame(
+    String path, {
+    Duration at = Duration.zero,
+    int width = 480,
+  }) async => bytes;
+}
+
 /// A complete stand-in for the machine: no FFmpeg, no real files.
 class FakeEnvironment {
-  FakeEnvironment({this.capabilities = softwareOnly});
+  FakeEnvironment({this.capabilities = softwareOnly, this.thumbnail});
 
   final Capabilities capabilities;
+
+  /// The picture shown for every video; none by default.
+  final Uint8List? thumbnail;
   final ffprobe = FakeFfprobe();
   final executor = FakeExecutor();
   final inhibitor = FakeSleepInhibitor();
@@ -208,6 +237,7 @@ class FakeEnvironment {
     capabilities: capabilities,
     sleepInhibitor: inhibitor,
     estimator: estimator,
+    thumbnailer: FakeThumbnailer(thumbnail),
   );
 
   /// Overrides that make the app use this environment.

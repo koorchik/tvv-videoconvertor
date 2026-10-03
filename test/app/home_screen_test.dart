@@ -261,7 +261,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Video track 1'), findsOneWidget);
-      expect(find.text('HLG'), findsOneWidget);
+      // Among the key facts at the top, and in the picture track's card.
+      expect(find.text('HLG'), findsNWidgets(2));
       expect(find.text('Timecode'), findsWidgets);
 
       await tester.tap(find.text('All metadata'));

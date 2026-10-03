@@ -805,4 +805,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sampleMiddle => 'middle 10 s';
+
+  @override
+  String get personalTag =>
+      'Personal detail: who, where, when or with what the video was made';
 }

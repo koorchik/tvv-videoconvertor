@@ -809,4 +809,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get sampleMiddle => '10 с із середини';
+
+  @override
+  String get personalTag => 'Особисті дані: хто, де, коли або чим зняв відео';
 }

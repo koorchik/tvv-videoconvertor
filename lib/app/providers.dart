@@ -5,6 +5,7 @@ import '../core/ffmpeg/capabilities.dart';
 import '../core/ffmpeg/locator.dart';
 import '../core/ffmpeg/runner.dart';
 import '../core/media/ffprobe.dart';
+import '../core/media/thumbnail.dart';
 import '../core/platform/sleep_inhibitor.dart';
 import '../core/queue/job_executor.dart';
 
@@ -17,6 +18,7 @@ class AppEnvironment {
     required this.capabilities,
     required this.sleepInhibitor,
     required this.estimator,
+    this.thumbnailer,
   });
 
   final Ffprobe ffprobe;
@@ -26,6 +28,9 @@ class AppEnvironment {
 
   /// Predicts output sizes before anything is converted.
   final OutputEstimator estimator;
+
+  /// Grabs preview frames of videos. Null where there is no FFmpeg to ask.
+  final Thumbnailer? thumbnailer;
 }
 
 /// Thrown at startup when no usable FFmpeg can be found.
@@ -43,6 +48,7 @@ final environmentProvider = FutureProvider<AppEnvironment>(
       capabilities: await CapabilityProbe(paths.ffmpeg).detect(),
       sleepInhibitor: SleepInhibitor.forPlatform(),
       estimator: SampleEstimator(FfmpegRunner(paths.ffmpeg)),
+      thumbnailer: Thumbnailer(paths.ffmpeg),
     );
   },
   // A missing FFmpeg does not appear by waiting; show the message at once.

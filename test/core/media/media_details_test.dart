@@ -180,4 +180,38 @@ void main() {
     expect(formatBytes(1894563210), '1.89 GB');
     expect(formatDuration(151.251), '0:02:31.251');
   });
+
+  group('personal tags', () {
+    const personal = [
+      'title',
+      'artist',
+      'creation_time',
+      'location',
+      'location-eng',
+      'make',
+      'model',
+      'com.apple.quicktime.location.ISO6709',
+      'com.apple.quicktime.make',
+      'timecode',
+    ];
+    for (final tag in personal) {
+      test('"$tag" is marked as personal', () {
+        expect(isPersonalTag(tag), isTrue);
+      });
+    }
+
+    const technical = [
+      'major_brand',
+      'compatible_brands',
+      'encoder',
+      'handler_name',
+      'vendor_id',
+      'language',
+    ];
+    for (final tag in technical) {
+      test('"$tag" is not', () {
+        expect(isPersonalTag(tag), isFalse);
+      });
+    }
+  });
 }

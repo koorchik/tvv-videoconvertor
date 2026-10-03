@@ -54,6 +54,18 @@ class RecipePane extends ConsumerWidget {
     final presets = scenario.presets
         .where((preset) => presetAvailable(preset, capabilities))
         .toList();
+    // The technical line describes what will really happen to the first
+    // selected video (its sound may need converting where a typical file's
+    // does not); with nothing selected, or a video that needs no work, it
+    // describes a typical camera file.
+    final selectedPlan = selectedVideos.isEmpty
+        ? null
+        : ref.watch(
+            previewProvider.select((p) => p[selectedVideos.first.id]?.plan),
+          );
+    final shownPlan = selectedPlan != null && selectedPlan.producesOutput
+        ? selectedPlan
+        : typicalPlan(selected, recipe.values, capabilities);
     final advanced = [
       for (final option in selected.options)
         if (advancedOptionVisible(selected, option, recipe.values)) option,
@@ -198,39 +210,42 @@ class RecipePane extends ConsumerWidget {
                     Icon(Icons.tune_rounded, size: 14, color: muted),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: TechnicalText(
-                        technicalSummary(
-                          l10n,
-                          typicalPlan(selected, recipe.values, capabilities),
-                        ),
-                      ),
+                      child: TechnicalText(technicalSummary(l10n, shownPlan)),
                     ),
                   ],
                 ),
+                // Each link may take up to half the row and shortens beyond
+                // that; a lone link sits at the right.
                 Row(
+                  mainAxisAlignment: advanced.isEmpty
+                      ? MainAxisAlignment.end
+                      : MainAxisAlignment.spaceBetween,
                   children: [
                     if (advanced.isNotEmpty)
-                      _LinkButton(
-                        label: l10n.moreOptions,
-                        onPressed: () => showDialog<void>(
-                          context: context,
-                          builder: (_) => const _MoreOptionsDialog(),
+                      Flexible(
+                        child: _LinkButton(
+                          label: l10n.moreOptions,
+                          onPressed: () => showDialog<void>(
+                            context: context,
+                            builder: (_) => const _MoreOptionsDialog(),
+                          ),
                         ),
                       ),
-                    const Spacer(),
                     if (selectedVideos.isNotEmpty)
-                      _LinkButton(
-                        label: l10n.showCommand,
-                        onPressed: () {
-                          final args = ref
-                              .read(queueProvider.notifier)
-                              .commandForVideo(selectedVideos.first);
-                          if (args == null) return;
-                          showDialog<void>(
-                            context: context,
-                            builder: (_) => CommandDialog(args: args),
-                          );
-                        },
+                      Flexible(
+                        child: _LinkButton(
+                          label: l10n.showCommand,
+                          onPressed: () {
+                            final args = ref
+                                .read(queueProvider.notifier)
+                                .commandForVideo(selectedVideos.first);
+                            if (args == null) return;
+                            showDialog<void>(
+                              context: context,
+                              builder: (_) => CommandDialog(args: args),
+                            );
+                          },
+                        ),
                       ),
                   ],
                 ),
@@ -591,7 +606,7 @@ class _LinkButton extends StatelessWidget {
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
     ),
     onPressed: onPressed,
-    child: Text(label),
+    child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
   );
 }
 

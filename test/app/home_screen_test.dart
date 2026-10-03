@@ -177,6 +177,38 @@ void main() {
 
       expect(find.textContaining('holiday_hevc-crf20.mp4'), findsOneWidget);
       expect(find.textContaining('holiday_hevc-crf18.mp4'), findsOneWidget);
+      // Each job says what was chosen, in the words of the panel.
+      expect(
+        find.text('Make it small · Works everywhere · Quality: Recommended'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Make it small · Works everywhere · Quality: Best quality'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a job lists every option that was chosen for it', (
+      tester,
+    ) async {
+      final sources = await pumpApp(tester, env);
+      await addVideos(tester, sources, ['/videos/holiday.mp4']);
+      await tester.tap(find.text('Edit in DaVinci Resolve'));
+      await tester.pump();
+      await tester.tap(find.byType(Switch));
+      await tester.pump();
+      await tester.tap(find.text('Smaller'));
+      await tester.pump();
+
+      await addToQueue(tester);
+
+      expect(
+        find.text(
+          'Edit in DaVinci Resolve · Resolve Studio · '
+          'Also convert the picture · File size: Smaller',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('pressing Add again with the same settings changes nothing', (
@@ -319,6 +351,25 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('DNxHR'), findsOneWidget);
+    });
+
+    testWidgets('the technical line tells what happens to the sound', (
+      tester,
+    ) async {
+      env.ffprobe.add(
+        '/videos/export.mov',
+        like: clip(audio: [track('flac', bitRate: 1400000)]),
+      );
+      final sources = await pumpApp(tester, env);
+      await addVideos(tester, sources, ['/videos/export.mov']);
+
+      expect(
+        find.widgetWithText(
+          TechnicalText,
+          'HEVC 10-bit, CRF 20 · AAC 320k · MP4',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the format is named beside each plain choice', (tester) async {

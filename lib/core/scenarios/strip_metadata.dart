@@ -14,6 +14,7 @@ library;
 
 import '../ffmpeg/capabilities.dart';
 import '../media/media_info.dart';
+import 'blocks.dart';
 import 'scenario.dart';
 
 const stripMetadataScenario = Scenario(
@@ -105,9 +106,7 @@ class StripMetadataPreset implements Preset {
     return ConversionPlan(
       kind: thorough ? PlanKind.encode : PlanKind.remux,
       video: videoAction,
-      audio: thorough
-          ? const AudioEncode(codec: 'aac', args: ['-b:a', '256k'])
-          : const AudioCopy(),
+      audio: thorough ? highQualityAac(input) : const AudioCopy(),
       muxer: muxer,
       extension: extension,
       nameSuffix: thorough ? '_clean-reencoded' : '_clean',

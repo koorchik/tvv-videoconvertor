@@ -145,3 +145,26 @@ bool advancedOptionVisible(
   }
   return true;
 }
+
+/// The options chosen for a job, in the words the panel uses: "Quality: Best
+/// quality", "Also convert the picture". Options that had no effect are left
+/// out, as the panel hides them; expert options are left to the technical
+/// line, where their names belong.
+List<String> chosenOptions(
+  AppLocalizations l10n,
+  Preset preset,
+  OptionValues values,
+) {
+  final chosen = <String>[];
+  for (final option in preset.options) {
+    if (!optionVisible(preset, option, values)) continue;
+    final choice = preset.choice(values, option.id);
+    final title = optionTitle(l10n, preset.id, option.id);
+    if (isSwitch(option)) {
+      if (choice == 'yes') chosen.add(title);
+    } else {
+      chosen.add('$title: ${choiceLabel(l10n, preset.id, choice)}');
+    }
+  }
+  return chosen;
+}

@@ -242,18 +242,9 @@ class CompressPreset implements Preset {
   AudioAction _audio(MediaInfo input) {
     if (input.audio.isEmpty) return const AudioCopy();
     final keep = input.audio.every(
-      (a) => a.codec == 'aac' && (a.bitRate ?? 0) <= 320000,
+      (a) => a.codec == 'aac' && (a.bitRate ?? 0) <= keepAacUpTo,
     );
-    if (keep) return const AudioCopy();
-    final channels = input.audio
-        .map((a) => a.channels)
-        .reduce((a, b) => a > b ? a : b);
-    final bitRate = switch (channels) {
-      1 => '128k',
-      2 => '256k',
-      _ => '448k',
-    };
-    return AudioEncode(codec: 'aac', args: ['-b:a', bitRate]);
+    return keep ? const AudioCopy() : highQualityAac(input);
   }
 
   ResourceCost _cost(String encoder) => switch (encoder) {

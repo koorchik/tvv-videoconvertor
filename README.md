@@ -15,6 +15,10 @@ by itself.
   - *Works everywhere* (HEVC, the default),
   - *Smallest file* (AV1),
   - *Fastest* (graphics card, offered only when a working one is found).
+
+  Sound is made compact too: the lossless sound of an editor export (FLAC,
+  PCM) becomes AAC at 320 kbit/s, which is a small part of a high-quality
+  video. Sound that is already AAC is kept untouched.
 - **Edit in DaVinci Resolve (Linux).** Makes camera and screen recordings open
   with both picture and sound in Resolve on Linux, for Resolve Studio and for
   the free edition.

@@ -512,9 +512,11 @@ class _GoalLine extends StatelessWidget {
     final scheme = theme.colorScheme;
     final preset = findPreset(job.recipe.presetId)!;
     final scenario = scenarios.firstWhere((s) => s.presets.contains(preset));
+    // What was chosen, in the words of the panel: goal, variant, options.
     final plain = [
       scenarioTitle(l10n, scenario.id),
       if (scenario.presets.length > 1) presetTitle(l10n, preset.id),
+      ...chosenOptions(l10n, preset, job.recipe.values),
     ].join(' · ');
     return Row(
       children: [
@@ -523,7 +525,7 @@ class _GoalLine extends StatelessWidget {
         Flexible(
           child: Text(
             plain,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelLarge?.copyWith(color: scheme.primary),
           ),

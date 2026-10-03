@@ -124,3 +124,24 @@ String encoderTag(VideoEncode video) {
   }
   return [family, ?hardware, ?quality].join('-');
 }
+
+/// AAC for results meant to be kept: 320 kbit/s for stereo, which is
+/// transparent and still a small part of a video file. Used wherever lossless
+/// or unusual sound (the FLAC or PCM of an editor export) is turned into
+/// something every player reads.
+AudioEncode highQualityAac(MediaInfo input) {
+  final channels = input.audio.fold(
+    0,
+    (most, track) => track.channels > most ? track.channels : most,
+  );
+  final bitRate = switch (channels) {
+    <= 1 => '192k',
+    2 => '320k',
+    _ => '512k',
+  };
+  return AudioEncode(codec: 'aac', args: ['-b:a', bitRate]);
+}
+
+/// AAC at or below this is kept as it is: re-encoding lossy sound only loses
+/// quality.
+const keepAacUpTo = 320000;

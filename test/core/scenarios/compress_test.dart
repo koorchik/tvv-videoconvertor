@@ -132,7 +132,41 @@ void main() {
       final audio = result.audio as AudioEncode;
 
       expect(audio.codec, 'aac');
-      expect(audio.args, ['-b:a', '256k']);
+      expect(audio.args, ['-b:a', '320k']);
+    });
+
+    test('lossless FLAC, as DaVinci Resolve exports, becomes 320k AAC', () {
+      final result = plan(
+        CompressPreset.hevc,
+        clip(audio: [track('flac', bitRate: 1400000)]),
+      );
+      final audio = result.audio as AudioEncode;
+
+      expect(audio.codec, 'aac');
+      expect(audio.args, ['-b:a', '320k']);
+    });
+
+    test('AAC already at 320k is kept; anything above is brought down', () {
+      final kept = plan(
+        CompressPreset.hevc,
+        clip(audio: [track('aac', bitRate: 320000)]),
+      );
+      final reduced = plan(
+        CompressPreset.hevc,
+        clip(audio: [track('aac', bitRate: 512000)]),
+      );
+
+      expect(kept.audio, isA<AudioCopy>());
+      expect((reduced.audio as AudioEncode).args, ['-b:a', '320k']);
+    });
+
+    test('a single channel needs less', () {
+      final result = plan(
+        CompressPreset.hevc,
+        clip(audio: [track('pcm_s24le', channels: 1)]),
+      );
+
+      expect((result.audio as AudioEncode).args, ['-b:a', '192k']);
     });
 
     test('surround sound gets a higher bitrate', () {
@@ -141,7 +175,7 @@ void main() {
         clip(audio: [track('pcm_s24le', channels: 6)]),
       );
 
-      expect((result.audio as AudioEncode).args, ['-b:a', '448k']);
+      expect((result.audio as AudioEncode).args, ['-b:a', '512k']);
     });
   });
 

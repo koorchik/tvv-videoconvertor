@@ -78,7 +78,7 @@ class RemuxPreset implements Preset {
         ? const AudioCopy()
         : target == 'mov' && lossless
         ? pcmAudio
-        : const AudioEncode(codec: 'aac', args: ['-b:a', '256k']);
+        : highQualityAac(input);
 
     return ConversionPlan(
       kind: holdsAudio ? PlanKind.remux : PlanKind.audioOnly,

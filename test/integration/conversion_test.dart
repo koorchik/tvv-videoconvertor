@@ -40,7 +40,11 @@ const hlgTags =
     'setparams=color_primaries=bt2020:color_trc=arib-std-b67:'
     'colorspace=bt2020nc:range=tv';
 
-/// Real conversions with the installed FFmpeg on generated clips.
+/// Real conversions with the installed FFmpeg on generated clips: every goal,
+/// the queue, samples, cancelling and pausing. Minutes of encoding, so they
+/// are run on a developer's machine; CI runs only the quick check in
+/// `ffmpeg_check_test.dart`, which also holds the tests of what the FFmpeg
+/// build can do.
 void main() {
   TestMedia? media;
   late Capabilities capabilities;
@@ -859,24 +863,6 @@ void main() {
       expect(handle.resume(), isTrue);
       final result = await handle.result;
       expect(result.status, ConversionStatus.done);
-    });
-  });
-
-  group('Capability probe', () {
-    test('finds the software encoders the presets rely on', () async {
-      if (unavailable()) return;
-
-      expect(
-        capabilities.encoders,
-        containsAll(['libsvtav1', 'libx265', 'libx264', 'prores_ks', 'dnxhd']),
-      );
-      expect(capabilities.ffmpegVersion, isNot('unknown'));
-    });
-
-    test('settles on SVT-AV1 parameters the library accepts', () async {
-      if (unavailable()) return;
-
-      expect(svtAv1ParamCandidates, contains(capabilities.svtAv1Params));
     });
   });
 }

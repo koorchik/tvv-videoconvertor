@@ -7,6 +7,13 @@ for [FFmpeg](https://ffmpeg.org/).
 Drop videos in, pick what you want, press **Add to queue**. Converting starts
 by itself.
 
+![The app: videos and the queue on the left, what to do with them on the right](docs/screenshots/cozy.png)
+
+It comes in two looks. The one above is the one it starts with; this is the
+other:
+
+![The same screen in the dark professional look](docs/screenshots/pro.png)
+
 ## What it does today
 
 - **Make it small.** Shrinks a video to a fraction of its size while looking
@@ -84,8 +91,9 @@ Early but working on Linux. Not done yet:
 
 - FFmpeg is **not bundled**; it must be installed (see below).
 - Windows and macOS builds compile in CI but have not been tried on real
-  machines. Keeping the computer awake and pausing are not implemented on
-  Windows.
+  machines. On macOS the conversion tests pass in CI. On Windows, keeping
+  the computer awake and pausing are not implemented, and the tests of
+  stopping a conversion part-way fail.
 - Only one video is converted at a time.
 - The quality levels are sensible starting values, not yet measured on real
   footage.
@@ -95,8 +103,10 @@ See [docs/ROADMAP.md](docs/ROADMAP.md).
 ## Requirements
 
 - FFmpeg 8 or newer with `ffprobe`, on the `PATH`, built with `libx265`,
-  `libsvtav1`, `prores_ks` and `dnxhd`. Distribution packages and the common
-  Windows/macOS builds include these.
+  `libsvtav1`, `prores_ks` and `dnxhd`. Linux distribution packages and
+  Homebrew include these. On Windows take a "full" build (Chocolatey's
+  `ffmpeg-full`): the "essentials" builds lack `libsvtav1`, and without it
+  "Smallest file" fails.
 - To build: [Flutter](https://docs.flutter.dev/get-started/install) 3.47 or
   newer with desktop support. On Linux also `ninja-build` and `libgtk-3-dev`.
 
@@ -113,11 +123,31 @@ flutter build linux --release # result in build/linux/x64/release/bundle
 ```sh
 flutter test --exclude-tags "ffmpeg || screenshots"  # fast: logic and UI
 flutter test --tags ffmpeg                           # real conversions, needs FFmpeg
+flutter test --tags ffmpeg_check                     # only the quick check of the installed FFmpeg
 flutter test --tags screenshots                      # renders the screen to build/screenshots/
+flutter test tool/make_screenshots.dart              # redraws the pictures in this README
 ```
 
 The conversion tests generate their own small clips; no footage is stored in
-the repository.
+the repository. They take minutes of encoding, so CI runs only the quick
+check: FFmpeg is found, has the encoders the app needs, and converts one
+short clip.
+
+## Releases
+
+Pushing a version tag publishes a release on GitHub with the app for Linux,
+Windows and macOS, once all three have passed their checks and built:
+
+```sh
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The app is given the tag's version, and the files are named after it
+(`tvv-videoconvertor-0.2.0-linux-x64.tar.gz`). A tag with a hyphen, such as
+`v0.2.0-beta.1`, is published as a pre-release. The notes explain how to get
+the app going and list the commits since the release before
+(`tool/release_notes.sh`).
 
 ## Command-line tool for development
 

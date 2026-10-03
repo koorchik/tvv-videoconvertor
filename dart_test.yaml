@@ -1,9 +1,14 @@
 # Tests tagged "ffmpeg" run real conversions and need ffmpeg and ffprobe.
 # Leave them out with: flutter test --exclude-tags ffmpeg
 #
+# The few of them also tagged "ffmpeg_check" are the quick check that the
+# installed FFmpeg can do what the app asks; CI runs just those:
+# flutter test --tags ffmpeg_check
+#
 # Tests tagged "screenshots" only render images of the screen into
 # build/screenshots/ for a visual check: flutter test --tags screenshots
 tags:
   ffmpeg:
     timeout: 3x
+  ffmpeg_check:
   screenshots:

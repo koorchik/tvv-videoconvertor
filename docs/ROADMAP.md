@@ -20,7 +20,9 @@
   professional one.
   Language, look, last goal and output folder are remembered.
 - **App icon** for the three platforms, drawn by `tool/make_icons.dart`.
-- **CI:** analysis, tests and release builds for Linux, Windows and macOS.
+- **CI:** analysis, tests, a quick check of FFmpeg and release builds for
+  Linux, Windows and macOS; a version tag publishes a GitHub release with the
+  three archives.
 
 ## Next
 
@@ -45,13 +47,17 @@
 7. **Ship.**
    - Bundle a pinned FFmpeg per platform, with licence notices and source.
    - Windows: keep-awake, pause, and ending FFmpeg when the app ends.
+     Stopping a conversion part-way fails there: of the conversion tests,
+     run once in CI on 2026-10-03, the three that cancel, shut down or stop
+     a measurement did not pass.
    - Installers (AppImage/deb, Windows installer, dmg) and release notes with
      the first-run security prompts explained.
    - Linux: a desktop entry named after the application identifier, with the
      icons installed beside it. Wayland desktops take the window icon from
      there; until then `tool/desktop_entry.dart` registers one by hand.
-   - Make the conversion tests pass on Windows and macOS and turn them into a
-     required check.
+   - Make the conversion tests pass on Windows (they pass on macOS). CI runs
+     only the quick FFmpeg check, so they have to be run on a Windows
+     machine.
 
 ## Later
 

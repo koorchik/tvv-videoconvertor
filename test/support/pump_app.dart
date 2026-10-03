@@ -124,8 +124,15 @@ Future<void> loadRealFonts() async {
   await icons.load();
 }
 
-/// Saves what is on screen to `build/screenshots/<name>.png`.
-Future<void> saveScreenshot(WidgetTester tester, String name) async {
+/// Saves what is on screen to `<folder>/<name>.png`, by default in
+/// `build/screenshots`. A [pixelRatio] of 2 gives an image twice as sharp,
+/// for showing to people.
+Future<void> saveScreenshot(
+  WidgetTester tester,
+  String name, {
+  String? folder,
+  double pixelRatio = 1,
+}) async {
   // Lets fades finish (a button going from disabled to enabled, for one), so
   // the image shows the settled state.
   await tester.pump(const Duration(milliseconds: 400));
@@ -133,9 +140,11 @@ Future<void> saveScreenshot(WidgetTester tester, String name) async {
     find.byKey(_screenshotKey),
   );
   await tester.runAsync(() async {
-    final image = await boundary.toImage();
+    final image = await boundary.toImage(pixelRatio: pixelRatio);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    final file = File(p.join('build', 'screenshots', '$name.png'));
+    final file = File(
+      p.join(folder ?? p.join('build', 'screenshots'), '$name.png'),
+    );
     await file.parent.create(recursive: true);
     await file.writeAsBytes(bytes!.buffer.asUint8List());
   });

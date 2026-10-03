@@ -21,6 +21,7 @@ flutter build linux --release                         # build/linux/x64/release/
 
 flutter test --exclude-tags "ffmpeg || screenshots"   # fast: logic and widgets
 flutter test --tags ffmpeg                            # real conversions, needs ffmpeg + ffprobe
+flutter test --tags ffmpeg_check                      # just the quick check of the installed FFmpeg
 flutter test --tags screenshots                       # writes PNGs to build/screenshots/
 
 flutter test test/app/workspace_test.dart             # one file
@@ -30,6 +31,7 @@ flutter analyze
 dart format lib test tool                             # CI fails on unformatted code
 flutter gen-l10n                                      # after editing lib/l10n/*.arb
 flutter test tool/make_icons.dart                     # redraws the app icon files
+flutter test tool/make_screenshots.dart               # redraws the README's pictures (docs/screenshots/)
 dart run tool/desktop_entry.dart                      # Linux: registers the icon with the desktop
 
 dart run tool/convert.dart --list                     # the engine without the UI
@@ -37,11 +39,24 @@ dart run tool/convert.dart compress.hevc clip.mov --dry-run
 ```
 
 - Several `--exclude-tags` flags do not combine; use the `"a || b"` form.
-- After a UI change, run the screenshots and look at the PNGs.
+- After a UI change, run the screenshots and look at the PNGs. If the main
+  screen looks different, redraw the README's pictures too; they are committed.
 - CI (`.github/workflows/ci.yml`) runs the format check, `flutter analyze`,
-  the fast tests, the `ffmpeg` tests and a release build on Linux, Windows and
-  macOS. The `ffmpeg` tests are required on Linux only; they have never been
-  run on the other two.
+  the fast tests, the quick FFmpeg check and a release build on Linux, Windows
+  and macOS. The check (`test/integration/ffmpeg_check_test.dart`, a second
+  long) is: FFmpeg found, the needed encoders there, one short clip
+  converted. The real conversions (`--tags ffmpeg`, minutes of encoding) are
+  not run in CI: run them here before a change to the engine goes out.
+- CI's Linux has Ubuntu's FFmpeg 6.1, older than the app supports. The check
+  passes with it, but one real conversion test does not (irregular frame
+  timing comes out at 23.976 instead of 30), so a result from CI's Linux says
+  nothing about FFmpeg 8.
+- A pushed version tag (`v1.2.0`, or `v1.2.0-beta.1` for a pre-release) makes
+  the same workflow publish a GitHub release once all three builds pass. The
+  tag gives the app its version (`--build-name`) and the archives their
+  names; `pubspec.yaml`'s version is not used. `tool/release_notes.sh v1.2.0`
+  prints the notes: fixed instructions, then the commit subjects since the
+  previous tag, so commit subjects are what users read.
 
 ## Architecture
 
